@@ -23,6 +23,10 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.TextUtils;
 
+import com.dropbox.client2.DropboxAPI;
+import com.dropbox.client2.android.AndroidAuthSession;
+import com.dropbox.client2.session.AppKeyPair;
+import com.example.android.uamp.BuildConfig;
 import com.example.android.uamp.R;
 import com.example.android.uamp.utils.LogHelper;
 
@@ -66,6 +70,7 @@ public class MusicPlayerActivity extends BaseActivity
         if (savedInstanceState == null) {
             startFullScreenActivityIfNeeded(getIntent());
         }
+
     }
 
     @Override

@@ -25,6 +25,9 @@ android {
         targetSdkVersion 22
         versionCode 2
         versionName "1.1"
+
+        buildConfigField 'String', 'dbApiKey', '"mz1r7oeb58b1h82"'
+        buildConfigField 'String', 'dbApiSecret', '"w30zzoa3iihfja5"'
     }
     buildTypes {
         release {

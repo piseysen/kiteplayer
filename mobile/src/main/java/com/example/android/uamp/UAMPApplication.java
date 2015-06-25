@@ -16,7 +16,11 @@
 package com.example.android.uamp;
 
 import android.app.Application;
+import android.content.SharedPreferences;
 
+import com.dropbox.client2.DropboxAPI;
+import com.dropbox.client2.android.AndroidAuthSession;
+import com.dropbox.client2.session.AppKeyPair;
 import com.example.android.uamp.ui.FullScreenPlayerActivity;
 import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
 
@@ -28,6 +32,8 @@ import static com.google.android.libraries.cast.companionlibrary.cast.BaseCastMa
  */
 public class UAMPApplication extends Application {
 
+    private DropboxAPI<AndroidAuthSession> mDBApi;
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -35,5 +41,17 @@ public class UAMPApplication extends Application {
         VideoCastManager castManager = VideoCastManager.initialize(
                 getApplicationContext(), applicationId, FullScreenPlayerActivity.class, null);
         castManager.enableFeatures(FEATURE_WIFI_RECONNECT | FEATURE_DEBUGGING);
+
+        // Dropbox initialization
+        SharedPreferences dbp = getSharedPreferences(getString(R.string.dropbox_preferences),MODE_PRIVATE);
+        String authToken = dbp.getString(getString(R.string.dropbox_token), null);
+
+        AppKeyPair appKeys = new AppKeyPair(BuildConfig.dbApiKey, BuildConfig.dbApiSecret);
+        AndroidAuthSession session = authToken != null?new AndroidAuthSession(appKeys,authToken):new AndroidAuthSession(appKeys);
+        mDBApi = new DropboxAPI<AndroidAuthSession>(session);
+    }
+
+    public DropboxAPI<AndroidAuthSession> getDropboxApi() {
+        return this.mDBApi;
     }
 }

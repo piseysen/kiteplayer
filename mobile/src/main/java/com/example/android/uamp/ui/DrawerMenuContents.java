@@ -32,8 +32,8 @@ public class DrawerMenuContents {
     private final Class[] activities;
 
     public DrawerMenuContents(Context ctx) {
-        activities = new Class[2];
-        items = new ArrayList<>(2);
+        activities = new Class[3];
+        items = new ArrayList<>(3);
 
         activities[0] = MusicPlayerActivity.class;
         items.add(populateDrawerItem(ctx.getString(R.string.drawer_allmusic_title),
@@ -42,6 +42,11 @@ public class DrawerMenuContents {
         activities[1] = PlaceholderActivity.class;
         items.add(populateDrawerItem(ctx.getString(R.string.drawer_playlists_title),
             R.drawable.ic_playlist_music_black_24dp));
+
+        // TODO: Change model to allow different listener actions
+        activities[2] = null;
+        items.add(populateDrawerItem(ctx.getString(R.string.drawer_login_title),
+                R.drawable.ic_account_circle_black_24px));
     }
 
     public List<Map<String, ?>> getItems() {

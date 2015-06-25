@@ -19,6 +19,9 @@ package com.example.android.uamp.model;
 import android.media.MediaMetadata;
 import android.os.AsyncTask;
 
+import com.dropbox.client2.DropboxAPI;
+import com.dropbox.client2.android.AndroidAuthSession;
+import com.dropbox.client2.exception.DropboxException;
 import com.example.android.uamp.utils.LogHelper;
 
 import org.json.JSONArray;
@@ -62,6 +65,9 @@ public class MusicProvider {
     private static final String JSON_TOTAL_TRACK_COUNT = "totalTrackCount";
     private static final String JSON_DURATION = "duration";
 
+    // Shared DropboxAPI instance
+    private DropboxAPI<AndroidAuthSession> mDbApi = null;
+
     // Categorized caches for music track data:
     private ConcurrentMap<String, List<MediaMetadata>> mMusicListByGenre;
     private final ConcurrentMap<String, MutableMediaMetadata> mMusicListById;
@@ -76,6 +82,11 @@ public class MusicProvider {
 
     public interface Callback {
         void onMusicCatalogReady(boolean success);
+    }
+
+    public MusicProvider(DropboxAPI<AndroidAuthSession> dbApi) {
+        this();
+        mDbApi = dbApi;
     }
 
     public MusicProvider() {
@@ -253,6 +264,32 @@ public class MusicProvider {
                         MediaMetadata item = buildFromJSON(tracks.getJSONObject(j), path);
                         String musicId = item.getString(MediaMetadata.METADATA_KEY_MEDIA_ID);
                         mMusicListById.put(musicId, new MutableMediaMetadata(musicId, item));
+                    }
+
+                    // TODO: Hardcoded dropbox track
+                    if (mDbApi != null && mDbApi.getSession().isLinked()) {
+
+                        String filePath = "/Music/Planos e Muros - André Salomão/Bateu.mp3";
+
+                        try {
+                            DropboxAPI.Entry fileMetadata = mDbApi.metadata(filePath, 1, null, false, null);
+                            DropboxAPI.DropboxLink source = mDbApi.media(filePath, false);
+
+                            mMusicListById.put("Dropbox", new MutableMediaMetadata("Dropbox", new MediaMetadata.Builder()
+                                    .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, "Dropbox")
+                                    .putString(CUSTOM_METADATA_TRACK_SOURCE, source.url)
+                                    .putString(MediaMetadata.METADATA_KEY_ALBUM, "Planos e Muros")
+                                    .putString(MediaMetadata.METADATA_KEY_ARTIST, "André Salomão")
+                                    // .putLong(MediaMetadata.METADATA_KEY_DURATION, duration)
+                                    .putString(MediaMetadata.METADATA_KEY_GENRE, "MPB")
+                                    // .putString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI, iconUrl)
+                                    .putString(MediaMetadata.METADATA_KEY_TITLE, "Bateu")
+                                    // .putLong(MediaMetadata.METADATA_KEY_TRACK_NUMBER, trackNumber)
+                                    // .putLong(MediaMetadata.METADATA_KEY_NUM_TRACKS, totalTrackCount)
+                                    .build()));
+                        } catch (DropboxException dbe) {
+                            LogHelper.e(TAG,dbe);
+                        }
                     }
                     buildListsByGenre();
                 }

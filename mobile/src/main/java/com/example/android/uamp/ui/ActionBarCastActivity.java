@@ -18,10 +18,12 @@ package com.example.android.uamp.ui;
 import android.app.ActivityOptions;
 import android.app.FragmentManager;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
@@ -37,7 +39,12 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 
+import com.dropbox.client2.DropboxAPI;
+import com.dropbox.client2.android.AndroidAuthSession;
+import com.dropbox.client2.session.AppKeyPair;
+import com.example.android.uamp.BuildConfig;
 import com.example.android.uamp.R;
+import com.example.android.uamp.UAMPApplication;
 import com.example.android.uamp.utils.LogHelper;
 import com.example.android.uamp.utils.PrefUtils;
 import com.example.android.uamp.utils.ResourceHelper;
@@ -73,6 +80,9 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
     private boolean mToolbarInitialized;
 
     private int mItemToOpenWhenDrawerCloses = -1;
+
+    // Dropbox API
+    private DropboxAPI<AndroidAuthSession> mDBApi;
 
     private final VideoCastConsumerImpl mCastConsumer = new VideoCastConsumerImpl() {
 
@@ -118,13 +128,19 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
         public void onDrawerClosed(View drawerView) {
             if (mDrawerToggle != null) mDrawerToggle.onDrawerClosed(drawerView);
             int position = mItemToOpenWhenDrawerCloses;
-            if (position >= 0) {
+
+            // TODO: Improve handling of drawer item click
+            if (position >= 0 && position < 2) {
                 Bundle extras = ActivityOptions.makeCustomAnimation(
                     ActionBarCastActivity.this, R.anim.fade_in, R.anim.fade_out).toBundle();
 
                 Class activityClass = mDrawerMenuContents.getActivity(position);
                 startActivity(new Intent(ActionBarCastActivity.this, activityClass), extras);
                 finish();
+            } else if (position == 2) {
+
+                // Dropbox auth
+                mDBApi.getSession().startOAuth2Authentication(ActionBarCastActivity.this);
             }
         }
 
@@ -164,6 +180,9 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
 
         mCastManager = VideoCastManager.getInstance();
         mCastManager.reconnectSessionIfPossible();
+
+        mDBApi = ((UAMPApplication)getApplication()).getDropboxApi();
+
     }
 
     @Override
@@ -193,6 +212,22 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
         // action bar toggle: only top level screens show the hamburger-like icon, inner
         // screens - either Activities or fragments - show the "Up" icon instead.
         getFragmentManager().addOnBackStackChangedListener(mBackStackChangedListener);
+
+        // Dropbox auth success
+        if (mDBApi.getSession().authenticationSuccessful()) {
+            try {
+                // Required to complete auth, sets the access token on the session
+                mDBApi.getSession().finishAuthentication();
+
+                String accessToken = mDBApi.getSession().getOAuth2AccessToken();
+
+                SharedPreferences.Editor spe = getSharedPreferences(getString(R.string.dropbox_preferences),MODE_PRIVATE).edit();
+                spe.putString(getString(R.string.dropbox_token),accessToken).apply();
+
+            } catch (IllegalStateException e) {
+                LogHelper.i("DbAuthLog", "Error authenticating", e);
+            }
+        }
     }
 
     @Override
@@ -235,7 +270,7 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         // If the drawer is open, back will close it
-        if (mDrawerLayout != null && mDrawerLayout.isDrawerOpen(Gravity.START)) {
+        if (mDrawerLayout != null && mDrawerLayout.isDrawerOpen(GravityCompat.START)) {
             mDrawerLayout.closeDrawers();
             return;
         }
@@ -317,6 +352,8 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
         mDrawerList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
            @Override
            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+               // TODO: Fix colors for selected item Sign In
                if (position != selectedPosition) {
                    view.setBackgroundColor(getResources().getColor(
                        R.color.drawer_item_selected_background));

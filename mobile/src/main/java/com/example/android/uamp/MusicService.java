@@ -55,8 +55,9 @@ import java.util.List;
 import static com.example.android.uamp.utils.MediaIDHelper.MEDIA_ID_MUSICS_BY_GENRE;
 import static com.example.android.uamp.utils.MediaIDHelper.MEDIA_ID_ROOT;
 import static com.example.android.uamp.utils.MediaIDHelper.createBrowseCategoryMediaID;
+import static com.example.android.uamp.utils.MediaIDHelper.createMediaID;
 
-/**
+ /**
  * This class provides a MediaBrowser through a service. It exposes the media library to a browsing
  * client, through the onGetRoot and onLoadChildren methods. It also creates a MediaSession and
  * exposes it through its MediaSession.Token, which allows the client to create a MediaController
@@ -150,6 +151,9 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
     private MediaRouter mMediaRouter;
     private PackageValidator mPackageValidator;
 
+    // Dropbox session
+
+
     /**
      * Consumer responsible for switching the Playback instances depending on whether
      * it is connected to a remote player.
@@ -191,7 +195,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
         LogHelper.d(TAG, "onCreate");
 
         mPlayingQueue = new ArrayList<>();
-        mMusicProvider = new MusicProvider();
+        mMusicProvider = new MusicProvider(((UAMPApplication)getApplication()).getDropboxApi());
         mPackageValidator = new PackageValidator(this);
 
         // Start a new MediaSession
@@ -345,6 +349,17 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                                 "com.example.android.uamp/drawable/ic_by_genre"))
                         .setSubtitle(getString(R.string.browse_genre_subtitle))
                         .build(), MediaBrowser.MediaItem.FLAG_BROWSABLE
+            ));
+
+            // TODO: Temporary hardcoded DB file
+            mediaItems.add(new MediaBrowser.MediaItem(
+                    new MediaDescription.Builder()
+                        .setMediaId(createMediaID("Dropbox", "__DROPBOX__", "DROPBOX"))
+                        .setTitle("Dropbox")
+                        .setIconUri(Uri.parse("android.resource://" +
+                                "com.example.android.uamp/drawable/ic_by_genre"))
+                        .setSubtitle("From Dropbox")
+                        .build(), MediaItem.FLAG_PLAYABLE
             ));
 
         } else if (MEDIA_ID_MUSICS_BY_GENRE.equals(parentMediaId)) {

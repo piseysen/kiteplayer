@@ -153,6 +153,21 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".ui.MusicPlayerActivity"/>
         </activity>
+
+        <!-- Dropbox login activity -->
+        <activity
+            android:name="com.dropbox.client2.android.AuthActivity"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|keyboard">
+            <intent-filter>
+                <!-- Change this to be db- followed by your app key -->
+                <data android:scheme="db-mz1r7oeb58b1h82" />
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
     </application>
 
 </manifest>

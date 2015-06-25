@@ -24,6 +24,7 @@ import com.example.android.uamp.VoiceSearchParams;
 import com.example.android.uamp.model.MusicProvider;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -59,6 +60,12 @@ public class QueueHelper {
             tracks = musicProvider.getMusicsByGenre(categoryValue);
         } else if (categoryType.equals(MEDIA_ID_MUSICS_BY_SEARCH)) {
             tracks = musicProvider.searchMusicBySongTitle(categoryValue);
+        } else if (categoryType.equals("__DROPBOX__")) {
+
+            // TODO: Clean up DROPBOX category
+
+            MediaMetadata[] tracksArray = { musicProvider.getMusic(MediaIDHelper.extractMusicIDFromMediaID(mediaId)) };
+            tracks = Arrays.asList(tracksArray);
         }
 
         if (tracks == null) {
