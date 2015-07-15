@@ -1,43 +1,33 @@
-/*
- * Copyright (C) 2014 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 apply plugin: 'com.android.application'
+apply plugin: 'com.neenbedankt.android-apt'
+apply plugin: 'me.tatarka.retrolambda'
 
 android {
     compileSdkVersion 22
     buildToolsVersion "22.0.1"
 
     defaultConfig {
-        applicationId "com.example.android.uamp"
+        applicationId "com.peartree.android.ploud"
         minSdkVersion 21
         targetSdkVersion 22
-        versionCode 2
-        versionName "1.1"
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
         buildConfigField 'String', 'dbApiKey', '"mz1r7oeb58b1h82"'
         buildConfigField 'String', 'dbApiSecret', '"w30zzoa3iihfja5"'
     }
     buildTypes {
         release {
+            // TODO Enable minify and resource shrinking
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_7
-        targetCompatibility JavaVersion.VERSION_1_7
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
     lintOptions {
         abortOnError true
@@ -62,4 +52,26 @@ dependencies {
 
     compile (name:'CastCompanionLibrary-debug', ext:'aar')
     compile 'com.github.amlcurran.showcaseview:library:5.0.0'
+
+    // RxJava / RxAndroid
+    compile 'io.reactivex:rxjava:1.0.+'
+    compile 'io.reactivex:rxandroid:0.25.+'
+
+    // Dagger 2
+    compile 'com.google.dagger:dagger:2.+'
+    apt 'com.google.dagger:dagger-compiler:2.+'
+    testCompile 'com.google.dagger:dagger:2.+'
+    testCompile 'com.google.dagger:dagger-compiler:2.+'
+
+    // Java APIs
+    compile 'javax.annotation:javax.annotation-api:1.2'
+
+    // Robolectric
+    testCompile 'junit:junit:4.+'
+    testCompile 'org.hamcrest:hamcrest-library:1.3' // TODO review dependency
+    testCompile 'org.robolectric:robolectric:3.+'
+    testCompile 'org.apache.httpcomponents:httpclient:4.5'
+
+    // Mockito
+    testCompile "org.mockito:mockito-core:1.+"
 }

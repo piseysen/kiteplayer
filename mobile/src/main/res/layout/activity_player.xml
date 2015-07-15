@@ -45,7 +45,7 @@
             android:layout_alignParentBottom="true"
             custom:cardElevation="8dp">
 
-            <fragment android:name="com.example.android.uamp.ui.PlaybackControlsFragment"
+            <fragment android:name="com.peartree.android.ploud.ui.PlaybackControlsFragment"
                       android:id="@+id/fragment_playback_controls"
                       android:layout_width="match_parent"
                       android:layout_height="wrap_content"

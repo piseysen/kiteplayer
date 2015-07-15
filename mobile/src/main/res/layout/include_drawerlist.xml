@@ -14,7 +14,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
   -->
-<com.example.android.uamp.ui.ScrimInsetsRelativeLayout
+<com.peartree.android.ploud.ui.ScrimInsetsRelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:custom="http://schemas.android.com/apk/res-auto"
     android:layout_width="240dp"
@@ -37,4 +37,4 @@
         android:layout_height="match_parent"
         android:listSelector="?android:selectableItemBackground"
         android:drawSelectorOnTop="true"/>
-</com.example.android.uamp.ui.ScrimInsetsRelativeLayout>
+</com.peartree.android.ploud.ui.ScrimInsetsRelativeLayout>
