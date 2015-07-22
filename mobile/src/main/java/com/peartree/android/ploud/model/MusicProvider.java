@@ -162,11 +162,11 @@ public class MusicProvider {
 
             builder
                     .putString(CUSTOM_METADATA_TRACK_SOURCE, song.getDownloadURL().toString())
-                    .putString(MediaMetadata.METADATA_KEY_ALBUM, song.getAlbum())
+                    .putString(MediaMetadata.METADATA_KEY_ALBUM, song.getAlbum()!=null?song.getAlbum():entry.getParentDir())
                     .putString(MediaMetadata.METADATA_KEY_ARTIST, song.getArtist())
                     .putLong(MediaMetadata.METADATA_KEY_DURATION, song.getDuration())
                     .putString(MediaMetadata.METADATA_KEY_GENRE, song.getGenre())
-                    .putString(MediaMetadata.METADATA_KEY_TITLE, song.getTitle())
+                    .putString(MediaMetadata.METADATA_KEY_TITLE, song.getTitle()!=null?song.getTitle():entry.getFilename())
                     .putLong(MediaMetadata.METADATA_KEY_TRACK_NUMBER, song.getTrackNumber())
                     .putLong(MediaMetadata.METADATA_KEY_NUM_TRACKS, song.getTotalTracks());
 

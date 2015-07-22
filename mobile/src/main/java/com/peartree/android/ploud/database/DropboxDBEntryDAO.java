@@ -86,10 +86,13 @@ public class DropboxDBEntryDAO {
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
         Cursor results;
-        String selection = Entry.COLUMN_NAME_PARENT_DIR + " = ?";
+        String query = "SELECT * FROM "+
+                Entry.TABLE_NAME+" WHERE "+
+                Entry.COLUMN_NAME_PARENT_DIR+" = ? COLLATE NOCASE ORDER BY "+
+                Entry.COLUMN_NAME_IS_DIR+" DESC, "+Entry.COLUMN_NAME_FILENAME+" ASC";
         String[] selectionArgs = { parentDir.endsWith("/")?parentDir:(parentDir+"/") };
 
-        results = db.query(Entry.TABLE_NAME,null,selection,selectionArgs,null,null,null);
+        results = db.rawQuery(query,selectionArgs);
 
         return new DropboxDBEntryCursorWrapper(results);
     }
