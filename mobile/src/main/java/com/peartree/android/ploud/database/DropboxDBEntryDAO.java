@@ -3,12 +3,15 @@ package com.peartree.android.ploud.database;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.support.annotation.NonNull;
 
 import com.peartree.android.ploud.database.DropboxDBContract.Entry;
 import com.peartree.android.ploud.database.DropboxDBEntryMapper.DropboxDBEntryCursorWrapper;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
+import rx.Observable;
 
 @Singleton
 public class DropboxDBEntryDAO {
@@ -43,20 +46,48 @@ public class DropboxDBEntryDAO {
 
         if (results.getCount() > 0) {
             results.moveToFirst();
-            return new DropboxDBEntryCursorWrapper(results);
+            return new DropboxDBEntryCursorWrapper(results).getEntry();
         } else {
             return null;
         }
 
     }
 
+    // TODO Rethink method name
+    public Observable<DropboxDBEntry> getFindByDir(@NonNull String parentDir) {
+        return Observable.create(subscriber -> {
+            DropboxDBEntryCursorWrapper cursor = null;
+            try {
+                cursor = findByParentDir(parentDir);
+                if (cursor.getCount() > 0) {
+                    cursor.moveToFirst();
+
+                    do {
+                        // TODO Emmit POJO instead
+                        subscriber.onNext(cursor.getEntry());
+                    } while (cursor.moveToNext());
+
+                }
+
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
+                    cursor = null;
+                }
+                subscriber.onCompleted();
+            }
+        });
+    }
+
     public DropboxDBEntryMapper.DropboxDBEntryCursorWrapper findByParentDir(String parentDir) {
+
+        // TODO Currently case-sensitive query
 
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
         Cursor results;
         String selection = Entry.COLUMN_NAME_PARENT_DIR + " = ?";
-        String[] selectionArgs = { parentDir };
+        String[] selectionArgs = { parentDir.endsWith("/")?parentDir:(parentDir+"/") };
 
         results = db.query(Entry.TABLE_NAME,null,selection,selectionArgs,null,null,null);
 

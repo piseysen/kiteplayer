@@ -17,6 +17,7 @@
 package com.peartree.android.ploud.utils;
 
 import android.support.annotation.NonNull;
+import android.text.TextUtils;
 
 import java.util.Arrays;
 
@@ -29,8 +30,10 @@ public class MediaIDHelper {
     public static final String MEDIA_ID_ROOT = "__ROOT__";
     public static final String MEDIA_ID_MUSICS_BY_GENRE = "__BY_GENRE__";
     public static final String MEDIA_ID_MUSICS_BY_SEARCH = "__BY_SEARCH__";
+    public static final String MEDIA_ID_MUSICS_BY_FOLDER = "__BY_FOLDER__";
 
-    private static final char CATEGORY_SEPARATOR = '/';
+
+    private static final char CATEGORY_SEPARATOR = '~';
     private static final char LEAF_SEPARATOR = '|';
 
     public static String createMediaID(String musicID, String... categories) {
@@ -52,8 +55,24 @@ public class MediaIDHelper {
         return sb.toString();
     }
 
-    public static String createBrowseCategoryMediaID(String categoryType, String categoryValue) {
-        return categoryType + CATEGORY_SEPARATOR + categoryValue;
+    public static String createBrowseCategoryMediaID(String categoryType, String... categories) {
+        return categoryType + CATEGORY_SEPARATOR + TextUtils.join(Character.toString(CATEGORY_SEPARATOR),categories);
+    }
+
+    /**
+     * Extracts category and categoryValue from the mediaID. mediaID is, by this sample's
+     * convention, a concatenation of category (eg "by_genre"), categoryValue (eg "Classical") and
+     * mediaID. This is necessary so we know where the user selected the music from, when the music
+     * exists in more than one music list, and thus we are able to correctly build the playing queue.
+     *
+     * @param mediaID that contains a category and categoryValue.
+     */
+    public static @NonNull String[] getHierarchy(String mediaID) {
+        int pos = mediaID.indexOf(LEAF_SEPARATOR);
+        if (pos >= 0) {
+            mediaID = mediaID.substring(0, pos);
+        }
+        return mediaID.split(String.valueOf(CATEGORY_SEPARATOR));
     }
 
     /**
@@ -73,26 +92,18 @@ public class MediaIDHelper {
         return null;
     }
 
-    /**
-     * Extracts category and categoryValue from the mediaID. mediaID is, by this sample's
-     * convention, a concatenation of category (eg "by_genre"), categoryValue (eg "Classical") and
-     * mediaID. This is necessary so we know where the user selected the music from, when the music
-     * exists in more than one music list, and thus we are able to correctly build the playing queue.
-     *
-     * @param mediaID that contains a category and categoryValue.
-     */
-    public static @NonNull String[] getHierarchy(String mediaID) {
-        int pos = mediaID.indexOf(LEAF_SEPARATOR);
-        if (pos >= 0) {
-            mediaID = mediaID.substring(0, pos);
+    public static String extractBrowserCategoryFromMediaID(String mediaID) {
+        String[] hierarchy = getHierarchy(mediaID);
+        if (hierarchy.length > 0) {
+            return hierarchy[0];
         }
-        return mediaID.split(String.valueOf(CATEGORY_SEPARATOR));
+        return null;
     }
 
-    public static String extractBrowseCategoryValueFromMediaID(String mediaID) {
+    public static String[] extractBrowseCategoryValueFromMediaID(String mediaID) {
         String[] hierarchy = getHierarchy(mediaID);
-        if (hierarchy.length == 2) {
-            return hierarchy[1];
+        if (hierarchy.length > 0) {
+            return Arrays.copyOfRange(hierarchy,1,hierarchy.length);
         }
         return null;
     }

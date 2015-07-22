@@ -28,4 +28,25 @@ public final class DropboxDBContract {
         public static final String COLUMN_NAME_ICON = "icon";
         public static final String COLUMN_NAME_THUMB_EXISTS = "thumb_exists";
     }
+
+    public static abstract class Song implements BaseColumns {
+
+        public static final String TABLE_NAME = "music";
+
+        public static final String COLUMN_NAME_DOWNLOAD_URL = "download_url";
+        public static final String COLUMN_NAME_DOWNLOAD_URL_EXPIRATION = "download_url_expiration";
+
+        public static final String COLUMN_NAME_ALBUM = "album";
+        public static final String COLUMN_NAME_ARTIST = "artist";
+        public static final String COLUMN_NAME_GENRE = "genre";
+        public static final String COLUMN_NAME_TITLE = "title";
+
+        public static final String COLUMN_NAME_DURATION = "duration";
+        public static final String COLUMN_NAME_TRACK_NUMBER = "track_number";
+        public static final String COLUMN_NAME_TOTAL_TRACKS = "total_tracks";
+
+        public static final String COLUMN_NAME_ENTRY_ID = "entry_id";
+
+        // TODO Deal with album art
+    }
 }

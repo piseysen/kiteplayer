@@ -1,10 +1,11 @@
 package com.peartree.android.ploud.database;
 
 import android.app.Application;
-import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+
 import com.peartree.android.ploud.database.DropboxDBContract.Entry;
+import com.peartree.android.ploud.database.DropboxDBContract.Song;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -39,6 +40,35 @@ public class DropboxDBHelper extends SQLiteOpenHelper {
                     Entry.COLUMN_NAME_PARENT_DIR + "," +
                     Entry.COLUMN_NAME_FILENAME + "))";
 
+    private static final String CREATE_PARENT_DIR_INDEX =
+            "CREATE INDEX parent_dir ON "+
+                    Entry.TABLE_NAME+"("+Entry.COLUMN_NAME_PARENT_DIR+
+                    ") WHERE "+Entry.COLUMN_NAME_IS_DIR;
+
+    private static final String CREATE_SONG_TABLE =
+            "CREATE TABLE " + Song.TABLE_NAME + "(" +
+                    Song._ID + " INTEGER PRIMARY KEY," +
+                    Song.COLUMN_NAME_DOWNLOAD_URL + " VARCHAR," +
+                    Song.COLUMN_NAME_DOWNLOAD_URL_EXPIRATION + " VARCHAR," +
+
+                    Song.COLUMN_NAME_ALBUM + " VARCHAR," +
+                    Song.COLUMN_NAME_ARTIST + " VARCHAR," +
+                    Song.COLUMN_NAME_GENRE + " VARCHAR," +
+                    Song.COLUMN_NAME_TITLE + " VARCHAR," +
+
+                    Song.COLUMN_NAME_DURATION + " INTEGER," +
+                    Song.COLUMN_NAME_TRACK_NUMBER + " INTEGER," +
+                    Song.COLUMN_NAME_TOTAL_TRACKS + " INTEGER," +
+
+                    Song.COLUMN_NAME_ENTRY_ID + " INTEGER NOT NULL," +
+
+                    "FOREIGN KEY ("+
+                        Song.COLUMN_NAME_ENTRY_ID+") REFERENCES "+
+                        Entry.TABLE_NAME+"("+Entry._ID+") ON UPDATE CASCADE ON DELETE CASCADE,"+
+
+                    "CONSTRAINT uq_entry_id UNIQUE ("+
+                        Song.COLUMN_NAME_ENTRY_ID+"))";
+
     @Inject
     public DropboxDBHelper(Application app) {
         super(app.getApplicationContext(), DATABASE_NAME, null, DATABASE_VERSION);
@@ -46,7 +76,9 @@ public class DropboxDBHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
+
         db.execSQL(CREATE_ENTRY_TABLE);
+        db.execSQL(CREATE_SONG_TABLE);
     }
 
     @Override

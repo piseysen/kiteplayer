@@ -19,17 +19,18 @@ package com.peartree.android.ploud.utils;
 import android.media.MediaMetadata;
 import android.media.session.MediaSession;
 import android.os.Bundle;
+import android.text.TextUtils;
 
 import com.peartree.android.ploud.VoiceSearchParams;
 import com.peartree.android.ploud.model.MusicProvider;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
-import static com.peartree.android.ploud.utils.MediaIDHelper.MEDIA_ID_MUSICS_BY_GENRE;
+import rx.Observable;
+
+import static com.peartree.android.ploud.utils.MediaIDHelper.MEDIA_ID_MUSICS_BY_FOLDER;
 import static com.peartree.android.ploud.utils.MediaIDHelper.MEDIA_ID_MUSICS_BY_SEARCH;
 
 /**
@@ -39,44 +40,38 @@ public class QueueHelper {
 
     private static final String TAG = LogHelper.makeLogTag(QueueHelper.class);
 
-    public static List<MediaSession.QueueItem> getPlayingQueue(String mediaId,
+    public static Observable<MediaSession.QueueItem> getPlayingQueue(String mediaId,
             MusicProvider musicProvider) {
 
-        // extract the browsing hierarchy from the media ID:
-        String[] hierarchy = MediaIDHelper.getHierarchy(mediaId);
+        final String categoryType = MediaIDHelper.extractBrowserCategoryFromMediaID(mediaId);
+        final String[] categories = MediaIDHelper.extractBrowseCategoryValueFromMediaID(mediaId);
 
-        if (hierarchy.length != 2) {
+        if (categoryType == null) {
             LogHelper.e(TAG, "Could not build a playing queue for this mediaId: ", mediaId);
             return null;
         }
 
-        String categoryType = hierarchy[0];
-        String categoryValue = hierarchy[1];
-        LogHelper.d(TAG, "Creating playing queue for ", categoryType, ",  ", categoryValue);
 
-        Iterable<MediaMetadata> tracks = null;
-        // This sample only supports genre and by_search category types.
-        if (categoryType.equals(MEDIA_ID_MUSICS_BY_GENRE)) {
-            tracks = musicProvider.getMusicsByGenre(categoryValue);
-        } else if (categoryType.equals(MEDIA_ID_MUSICS_BY_SEARCH)) {
-            tracks = musicProvider.searchMusicBySongTitle(categoryValue);
-        } else if (categoryType.equals("__DROPBOX__")) {
+        LogHelper.d(TAG, "Creating playing queue for ", categoryType, ",  ", categories);
 
-            // TODO: Clean up DROPBOX category
-
-            MediaMetadata[] tracksArray = { musicProvider.getMusic(MediaIDHelper.extractMusicIDFromMediaID(mediaId)) };
-            tracks = Arrays.asList(tracksArray);
-        }
-
-        if (tracks == null) {
+        Observable<MediaMetadata> mmObservable;
+        if (categoryType.equals(MEDIA_ID_MUSICS_BY_SEARCH)) {
+            mmObservable = Observable.from(musicProvider.searchMusicBySongTitle(categories[0]));
+        } else if (categoryType.equals(MEDIA_ID_MUSICS_BY_FOLDER)) {
+            String folder = "/"+ TextUtils.join("/",categories);
+            mmObservable = musicProvider
+                    .getMusicByFolder(folder);
+        } else {
             LogHelper.e(TAG, "Unrecognized category type: ", categoryType, " for media ", mediaId);
             return null;
         }
 
-        return convertToQueue(tracks, hierarchy[0], hierarchy[1]);
+        return convertToQueue(mmObservable,categoryType,categories);
     }
 
-    public static List<MediaSession.QueueItem> getPlayingQueueFromSearch(String query,
+
+
+    public static Observable<MediaSession.QueueItem> getPlayingQueueFromSearch(String query,
             Bundle queryParams, MusicProvider musicProvider) {
 
         LogHelper.d(TAG, "Creating playing queue for musics from search: ", query,
@@ -96,7 +91,7 @@ public class QueueHelper {
         if (params.isAlbumFocus) {
             result = musicProvider.searchMusicByAlbum(params.album);
         } else if (params.isGenreFocus) {
-            result = musicProvider.getMusicsByGenre(params.genre);
+            result = musicProvider.searchMusicByGenre(params.genre);
         } else if (params.isArtistFocus) {
             result = musicProvider.searchMusicByArtist(params.artist);
         } else if (params.isSongFocus) {
@@ -114,7 +109,7 @@ public class QueueHelper {
             result = musicProvider.searchMusicBySongTitle(query);
         }
 
-        return convertToQueue(result, MEDIA_ID_MUSICS_BY_SEARCH, query);
+        return convertToQueue(Observable.from(result), MEDIA_ID_MUSICS_BY_SEARCH, query);
     }
 
 
@@ -142,29 +137,45 @@ public class QueueHelper {
         return -1;
     }
 
-    private static List<MediaSession.QueueItem> convertToQueue(
-            Iterable<MediaMetadata> tracks, String... categories) {
-        List<MediaSession.QueueItem> queue = new ArrayList<>();
-        int count = 0;
-        for (MediaMetadata track : tracks) {
+    private static Observable<MediaSession.QueueItem> convertToQueue(Observable<MediaMetadata> mmObservable,String categoryType, String... categories) {
 
-            // We create a hierarchy-aware mediaID, so we know what the queue is about by looking
-            // at the QueueItem media IDs.
-            String hierarchyAwareMediaID = MediaIDHelper.createMediaID(
-                    track.getDescription().getMediaId(), categories);
+        Observable<Integer> count = Observable.just(1).repeat().scan(0,(x,y) -> { return x+y; });
 
-            MediaMetadata trackCopy = new MediaMetadata.Builder(track)
-                    .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, hierarchyAwareMediaID)
-                    .build();
+        return mmObservable.zip(count,mmObservable, (i,mm) -> convertToQueueItem(mm,i,categoryType,categories));
 
-            // We don't expect queues to change after created, so we use the item index as the
-            // queueId. Any other number unique in the queue would work.
-            MediaSession.QueueItem item = new MediaSession.QueueItem(
-                    trackCopy.getDescription(), count++);
-            queue.add(item);
+    }
+
+    private static MediaSession.QueueItem convertToQueueItem(MediaMetadata track, int index, String categoryType, String... categories) {
+
+        // TODO Figure out more elegant way to combine arrays
+        String[] combined = new String[categories.length+1];
+
+        combined[0] = categoryType;
+        for (int i = 0; i < categories.length; i++) {
+            combined[i+1] = categories[i];
         }
-        return queue;
 
+        return convertToQueueItem(track, index, combined);
+    }
+
+    private static MediaSession.QueueItem convertToQueueItem(
+            MediaMetadata track, int index, String... categories) {
+
+        // We create a hierarchy-aware mediaID, so we know what the queue is about by looking
+        // at the QueueItem media IDs.
+        String hierarchyAwareMediaID = MediaIDHelper.createMediaID(
+                track.getDescription().getMediaId(), categories);
+
+        MediaMetadata trackCopy = new MediaMetadata.Builder(track)
+                .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, hierarchyAwareMediaID)
+                .build();
+
+        // We don't expect queues to change after created, so we use the item index as the
+        // queueId. Any other number unique in the queue would work.
+        MediaSession.QueueItem item = new MediaSession.QueueItem(
+                trackCopy.getDescription(), index);
+
+        return item;
     }
 
     /**
@@ -173,22 +184,24 @@ public class QueueHelper {
      * @param musicProvider the provider used for fetching music.
      * @return list containing {@link MediaSession.QueueItem}'s
      */
-    public static List<MediaSession.QueueItem> getRandomQueue(MusicProvider musicProvider) {
+    public static Observable<MediaSession.QueueItem> getRandomQueue(MusicProvider musicProvider) {
         List<MediaMetadata> result = new ArrayList<>();
 
-        for (String genre: musicProvider.getGenres()) {
-            Iterable<MediaMetadata> tracks = musicProvider.getMusicsByGenre(genre);
-            for (MediaMetadata track: tracks) {
-                if (ThreadLocalRandom.current().nextBoolean()) {
-                    result.add(track);
-                }
-            }
-        }
+        // TODO Implement getRandomQueue
+
+//        for (String genre: musicProvider.getGenres()) {
+//            Iterable<MediaMetadata> tracks = musicProvider.getMusicsByGenre(genre);
+//            for (MediaMetadata track: tracks) {
+//                if (ThreadLocalRandom.current().nextBoolean()) {
+//                    result.add(track);
+//                }
+//            }
+//        }
         LogHelper.d(TAG, "getRandomQueue: result.size=", result.size());
 
         Collections.shuffle(result);
 
-        return convertToQueue(result, MEDIA_ID_MUSICS_BY_SEARCH, "random");
+        return convertToQueue(Observable.from(result), MEDIA_ID_MUSICS_BY_SEARCH, "random");
     }
 
     public static boolean isIndexPlayable(int index, List<MediaSession.QueueItem> queue) {

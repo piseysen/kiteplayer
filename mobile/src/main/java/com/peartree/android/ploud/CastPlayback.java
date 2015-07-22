@@ -35,6 +35,8 @@ import com.google.android.libraries.cast.companionlibrary.cast.exceptions.Transi
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import rx.schedulers.Schedulers;
+
 import static android.media.session.MediaSession.QueueItem;
 
 /**
@@ -211,18 +213,32 @@ public class CastPlayback implements Playback {
     private void loadMedia(String mediaId, boolean autoPlay) throws
             TransientNetworkDisconnectionException, NoConnectionException, JSONException {
         String musicId = MediaIDHelper.extractMusicIDFromMediaID(mediaId);
-        android.media.MediaMetadata track = mMusicProvider.getMusic(musicId);
-        if (track == null) {
-            throw new IllegalArgumentException("Invalid mediaId " + mediaId);
-        }
-        if (!TextUtils.equals(mediaId, mCurrentMediaId)) {
-            mCurrentMediaId = mediaId;
-            mCurrentPosition = 0;
-        }
-        JSONObject customData = new JSONObject();
-        customData.put(ITEM_ID, mediaId);
-        MediaInfo media = toCastMediaMetadata(track, customData);
-        mCastManager.loadMedia(media, autoPlay, mCurrentPosition, customData);
+        mMusicProvider.getMusic(musicId).single()
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.immediate())
+                .subscribe(track -> {
+                    if (track == null) {
+                        throw new IllegalArgumentException("Invalid mediaId " + mediaId);
+                    }
+                    if (!TextUtils.equals(mediaId, mCurrentMediaId)) {
+                        mCurrentMediaId = mediaId;
+                        mCurrentPosition = 0;
+                    }
+                    JSONObject customData = new JSONObject();
+                    try {
+                        customData.put(ITEM_ID, mediaId);
+                    } catch (JSONException e) {
+                        throw new RuntimeException(e); // TODO Better way to deal with exceptions
+                    }
+                    MediaInfo media = toCastMediaMetadata(track, customData);
+                    try {
+                        mCastManager.loadMedia(media, autoPlay, mCurrentPosition, customData);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e); // TODO Better way to deal with exceptions
+                    }
+                }, error -> {
+                    LogHelper.e(TAG,error);
+                });
     }
 
     /**

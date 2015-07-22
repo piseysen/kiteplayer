@@ -18,21 +18,27 @@ package com.peartree.android.ploud.model;
 
 import android.media.MediaMetadata;
 import android.media.MediaMetadataRetriever;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.exception.DropboxException;
 import com.peartree.android.ploud.database.DropboxDBEntry;
 import com.peartree.android.ploud.database.DropboxDBEntryDAO;
+import com.peartree.android.ploud.database.DropboxDBSong;
 import com.peartree.android.ploud.dropbox.DropboxSyncService;
 import com.peartree.android.ploud.utils.LogHelper;
 
 import java.util.Collections;
+import java.util.HashMap;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.exceptions.OnErrorThrowable;
 import rx.schedulers.Schedulers;
 
 /**
@@ -45,6 +51,9 @@ public class MusicProvider {
     private static final String TAG = LogHelper.makeLogTag(MusicProvider.class);
 
     public static final String CUSTOM_METADATA_TRACK_SOURCE = "__SOURCE__";
+    public static final String CUSTOM_METADATA_FILENAME = "__FILENAME__";
+    public static final String CUSTOM_METADATA_DIRECTORY = "__DIRECTORY__";
+    public static final String CUSTOM_METADATA_IS_DIRECTORY = "__IS_DIRECTORY__";
 
     private DropboxAPI<AndroidAuthSession> mDBApi = null;
     private DropboxDBEntryDAO mEntryDao;
@@ -69,26 +78,24 @@ public class MusicProvider {
         void onMusicCatalogReady(boolean success);
     }
 
-    /**
-     * Get an iterator over the list of genres
-     *
-     * @return genres
-     */
-    public Iterable<String> getGenres() {
 
-        // TODO Implement getGenres
-        return Collections.emptyList();
+    /**
+     * Get media by parent folder
+     * Results can include folders and audio files
+     */
+    public Observable<MediaMetadata> getMusicByFolder(@NonNull String parentFolder) {
+        return mDBSyncService.getDBSongSyncronizer(mEntryDao.getFindByDir(parentFolder))
+                .map(this::buildMetadataFromDBEntry);
     }
 
+
     /**
-     * Get music tracks of the given genre
+     * Very basic implementation of a search that filter music tracks with title containing
+     * the given query.
      *
      */
-    public Iterable<MediaMetadata> getMusicsByGenre(String genre) {
-
-        // TODO Implement getMusicByGenre
-        return Collections.emptyList();
-
+    public Iterable<MediaMetadata> searchMusicByGenre(String query) {
+        return searchMusic(MediaMetadata.METADATA_KEY_TITLE, query);
     }
 
     /**
@@ -131,47 +138,41 @@ public class MusicProvider {
      *
      * @param musicId The unique, non-hierarchical music ID.
      */
-    public MediaMetadata getMusic(String musicId) {
+    public Observable<MediaMetadata> getMusic(String musicId) {
 
-        DropboxDBEntry entry;
-        MediaMetadata metadata = null;
-
-        entry = mEntryDao.findById(Long.valueOf(musicId));
-
-        if (entry != null) {
-            try {
-                metadata = buildMetadataFromDBEntry(entry);
-            } catch (DropboxException de) {
-                LogHelper.d(TAG,de);
-            }
-        }
-
-        return metadata;
+        return mDBSyncService.getDBSongSyncronizer(
+                Observable.just(mEntryDao.findById(Long.valueOf(musicId))))
+                .map(this::buildMetadataFromDBEntry);
 
     }
 
-    public MediaMetadata buildMetadataFromDBEntry(DropboxDBEntry entry) throws DropboxException {
+    public MediaMetadata buildMetadataFromDBEntry(DropboxDBEntry entry) {
 
-        DropboxAPI.DropboxLink link;
-        MediaMetadataRetriever retriever;
         MediaMetadata.Builder builder = new MediaMetadata.Builder();
 
-        link = mDBApi.media(entry.getParentDir() + entry.getFilename(), false);
-
-        retriever = new MediaMetadataRetriever();
-        retriever.setDataSource(link.url);
-
-        return builder
+        builder
                 .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, Long.toString(entry.getId()))
-                .putString(CUSTOM_METADATA_TRACK_SOURCE, link.url)
-                .putString(MediaMetadata.METADATA_KEY_ALBUM, retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM))
-                .putString(MediaMetadata.METADATA_KEY_ARTIST, retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST))
-                .putLong(MediaMetadata.METADATA_KEY_DURATION, Long.valueOf(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)))
-                .putString(MediaMetadata.METADATA_KEY_GENRE, retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_GENRE))
-                // .putString(MediaMetadata.METADATA_KEY_TITLE, title)
-                .putLong(MediaMetadata.METADATA_KEY_TRACK_NUMBER, Long.valueOf(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER)))
-                .putLong(MediaMetadata.METADATA_KEY_NUM_TRACKS, Long.valueOf(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_NUM_TRACKS)))
-                .build();
+                .putString(CUSTOM_METADATA_FILENAME, entry.getFilename())
+                .putString(CUSTOM_METADATA_DIRECTORY, entry.getParentDir())
+                .putString(CUSTOM_METADATA_IS_DIRECTORY, Boolean.toString(entry.isDir()));
+
+        if (!entry.isDir() && entry.getSong() != null) {
+
+            DropboxDBSong song = entry.getSong();
+
+            builder
+                    .putString(CUSTOM_METADATA_TRACK_SOURCE, song.getDownloadURL().toString())
+                    .putString(MediaMetadata.METADATA_KEY_ALBUM, song.getAlbum())
+                    .putString(MediaMetadata.METADATA_KEY_ARTIST, song.getArtist())
+                    .putLong(MediaMetadata.METADATA_KEY_DURATION, song.getDuration())
+                    .putString(MediaMetadata.METADATA_KEY_GENRE, song.getGenre())
+                    .putString(MediaMetadata.METADATA_KEY_TITLE, song.getTitle())
+                    .putLong(MediaMetadata.METADATA_KEY_TRACK_NUMBER, song.getTrackNumber())
+                    .putLong(MediaMetadata.METADATA_KEY_NUM_TRACKS, song.getTotalTracks());
+
+        }
+
+        return builder.build();
     }
 
     public synchronized void updateMusic(String musicId, MediaMetadata metadata) {
@@ -196,12 +197,11 @@ public class MusicProvider {
 
     /**
      * Get the list of music tracks from a server and caches the track information
-     * for future reference, keying tracks by musicId and grouping by genre.
      */
     public void retrieveMediaAsync(final Callback callback) {
 
         mDBSyncService
-                .getDBEntrySync()
+                .getDBEntrySyncronizer()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())
                 .subscribe(
@@ -214,11 +214,6 @@ public class MusicProvider {
                             mCurrentState = State.INITIALIZED;
                             callback.onMusicCatalogReady(true);
                         });
-    }
-
-    private synchronized void buildListsByGenre() {
-
-        // TODO Implement buildListsByGenre?
     }
 
 }

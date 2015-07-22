@@ -33,6 +33,8 @@ import com.peartree.android.ploud.utils.MediaIDHelper;
 
 import java.io.IOException;
 
+import rx.schedulers.Schedulers;
+
 import static android.media.MediaPlayer.OnCompletionListener;
 import static android.media.MediaPlayer.OnErrorListener;
 import static android.media.MediaPlayer.OnPreparedListener;
@@ -166,41 +168,47 @@ public class LocalPlayback implements Playback, AudioManager.OnAudioFocusChangeL
         } else {
             mState = PlaybackState.STATE_STOPPED;
             relaxResources(false); // release everything except MediaPlayer
-            MediaMetadata track = mMusicProvider.getMusic(
-                    MediaIDHelper.extractMusicIDFromMediaID(item.getDescription().getMediaId()));
 
-            String source = track.getString(MusicProvider.CUSTOM_METADATA_TRACK_SOURCE);
+            mMusicProvider.getMusic(
+                    MediaIDHelper.extractMusicIDFromMediaID(item.getDescription().getMediaId()))
+                    .single()
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(Schedulers.immediate())
+                    .subscribe(track -> {
 
-            try {
-                createMediaPlayerIfNeeded();
+                        String source = track.getString(MusicProvider.CUSTOM_METADATA_TRACK_SOURCE);
 
-                mState = PlaybackState.STATE_BUFFERING;
+                        try {
+                            createMediaPlayerIfNeeded();
 
-                mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-                mMediaPlayer.setDataSource(source);
+                            mState = PlaybackState.STATE_BUFFERING;
 
-                // Starts preparing the media player in the background. When
-                // it's done, it will call our OnPreparedListener (that is,
-                // the onPrepared() method on this class, since we set the
-                // listener to 'this'). Until the media player is prepared,
-                // we *cannot* call start() on it!
-                mMediaPlayer.prepareAsync();
+                            mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+                            mMediaPlayer.setDataSource(source);
 
-                // If we are streaming from the internet, we want to hold a
-                // Wifi lock, which prevents the Wifi radio from going to
-                // sleep while the song is playing.
-                mWifiLock.acquire();
+                            // Starts preparing the media player in the background. When
+                            // it's done, it will call our OnPreparedListener (that is,
+                            // the onPrepared() method on this class, since we set the
+                            // listener to 'this'). Until the media player is prepared,
+                            // we *cannot* call start() on it!
+                            mMediaPlayer.prepareAsync();
 
-                if (mCallback != null) {
-                    mCallback.onPlaybackStatusChanged(mState);
-                }
+                            // If we are streaming from the internet, we want to hold a
+                            // Wifi lock, which prevents the Wifi radio from going to
+                            // sleep while the song is playing.
+                            mWifiLock.acquire();
 
-            } catch (IOException ex) {
-                LogHelper.e(TAG, ex, "Exception playing song");
-                if (mCallback != null) {
-                    mCallback.onError(ex.getMessage());
-                }
-            }
+                            if (mCallback != null) {
+                                mCallback.onPlaybackStatusChanged(mState);
+                            }
+
+                        } catch (IOException ex) {
+                            LogHelper.e(TAG, ex, "Exception playing song");
+                            if (mCallback != null) {
+                                mCallback.onError(ex.getMessage());
+                            }
+                        }
+                    });
         }
     }
 

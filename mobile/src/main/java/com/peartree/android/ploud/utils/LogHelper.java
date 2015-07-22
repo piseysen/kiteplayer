@@ -76,7 +76,7 @@ public class LogHelper {
     }
 
     public static void log(String tag, int level, Throwable t, Object... messages) {
-        if (Log.isLoggable(tag, level)) {
+//        if (Log.isLoggable(tag, level)) { // TODO Uncomment
             String message;
             if (t == null && messages != null && messages.length == 1) {
                 // handle this common case without the extra cost of creating a stringbuffer:
@@ -93,5 +93,5 @@ public class LogHelper {
             }
             Log.println(level, tag, message);
         }
-    }
+//    }
 }
