@@ -21,8 +21,8 @@ android {
     buildTypes {
         release {
             // TODO Enable minify and resource shrinking
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', 'proguard-retrolambda.pro', 'proguard-rxjava.pro', 'proguard-glide.pro'
         }
     }
     compileOptions {
@@ -52,6 +52,9 @@ dependencies {
 
     compile (name:'CastCompanionLibrary-debug', ext:'aar')
     compile 'com.github.amlcurran.showcaseview:library:5.0.0'
+
+    // Glide
+    compile 'com.github.bumptech.glide:glide:3.6.0'
 
     // RxJava / RxAndroid
     compile 'io.reactivex:rxjava:1.0.+'

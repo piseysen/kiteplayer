@@ -128,7 +128,7 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
             if (mDrawerToggle != null) mDrawerToggle.onDrawerClosed(drawerView);
             int position = mItemToOpenWhenDrawerCloses;
 
-            // TODO: Improve handling of drawer item click
+            // TODO Improve handling of drawer item tap
             if (position >= 0 && position < 2) {
                 Bundle extras = ActivityOptions.makeCustomAnimation(
                     ActionBarCastActivity.this, R.anim.fade_in, R.anim.fade_out).toBundle();
@@ -352,7 +352,7 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
            @Override
            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-               // TODO: Fix colors for selected item Sign In
+               // TODO Fix state for selected item Sign In
                if (position != selectedPosition) {
                    view.setBackgroundColor(getResources().getColor(
                        R.color.drawer_item_selected_background));

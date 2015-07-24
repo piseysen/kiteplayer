@@ -28,9 +28,6 @@ public class DropboxDBSongDAO {
         SQLiteDatabase db = mDbHelper.getWritableDatabase();
         long id = db.insertWithOnConflict(Song.TABLE_NAME, null, DropboxDBSongMapper.toContentValues(song), SQLiteDatabase.CONFLICT_REPLACE);
 
-        // TODO Is this a good idea?
-        assert(song.getId() == 0 || song.getId() == id);
-
         return id;
     }
 

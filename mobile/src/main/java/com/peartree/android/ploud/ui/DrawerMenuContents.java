@@ -43,7 +43,7 @@ public class DrawerMenuContents {
         items.add(populateDrawerItem(ctx.getString(R.string.drawer_playlists_title),
             R.drawable.ic_playlist_music_black_24dp));
 
-        // TODO: Change model to allow different listener actions
+        // TODO Change model to allow different listener actions
         activities[2] = null;
         items.add(populateDrawerItem(ctx.getString(R.string.drawer_login_title),
                 R.drawable.ic_account_circle_black_24px));

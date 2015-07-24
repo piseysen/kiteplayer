@@ -402,7 +402,6 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                 }
 
             }).subscribeOn(Schedulers.io())
-                    .observeOn(Schedulers.immediate())
                     .subscribe(mediaItem -> {
                         mediaItems.add(mediaItem);
                     }, error -> {
@@ -435,7 +434,6 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                 mQueueSubscription = QueueHelper
                         .getRandomQueue(mMusicProvider).toList()
                         .subscribeOn(Schedulers.io())
-                        .observeOn(Schedulers.immediate())
                         .subscribe(queue -> {
                             mPlayingQueue = queue;
                             mSession.setQueue(mPlayingQueue);
@@ -483,29 +481,28 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
 
             mQueueSubscription = QueueHelper.getPlayingQueue(mediaId, mMusicProvider).toList()
                     .subscribeOn(Schedulers.io())
-                    .observeOn(Schedulers.immediate())
                     .subscribe(queue -> {
-                mPlayingQueue = queue;
-                mSession.setQueue(mPlayingQueue);
+                        mPlayingQueue = queue;
+                        mSession.setQueue(mPlayingQueue);
 
-                // TODO Generalize for all categories
-                String queueTitle = getString(R.string.browse_musics_by_genre_subtitle,
-                        MediaIDHelper.extractBrowseCategoryValueFromMediaID(mediaId));
-                mSession.setQueueTitle(queueTitle);
+                        // TODO Generalize for all categories
+                        String queueTitle = getString(R.string.browse_musics_by_genre_subtitle,
+                                MediaIDHelper.extractBrowseCategoryValueFromMediaID(mediaId));
+                        mSession.setQueueTitle(queueTitle);
 
-                if (mPlayingQueue != null && !mPlayingQueue.isEmpty()) {
-                    // set the current index on queue from the media Id:
-                    mCurrentIndexOnQueue = QueueHelper.getMusicIndexOnQueue(mPlayingQueue, mediaId);
+                        if (mPlayingQueue != null && !mPlayingQueue.isEmpty()) {
+                            // set the current index on queue from the media Id:
+                            mCurrentIndexOnQueue = QueueHelper.getMusicIndexOnQueue(mPlayingQueue, mediaId);
 
-                    if (mCurrentIndexOnQueue < 0) {
-                        LogHelper.e(TAG, "playFromMediaId: media ID ", mediaId,
-                                " could not be found on queue. Ignoring.");
-                    } else {
-                        // play the music
-                        handlePlayRequest();
-                    }
-                }
-            });
+                            if (mCurrentIndexOnQueue < 0) {
+                                LogHelper.e(TAG, "playFromMediaId: media ID ", mediaId,
+                                        " could not be found on queue. Ignoring.");
+                            } else {
+                                // play the music
+                                handlePlayRequest();
+                            }
+                        }
+                    });
         }
 
         @Override
@@ -597,23 +594,22 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                     mQueueSubscription = QueueHelper.getPlayingQueueFromSearch(query, extras,
                             mMusicProvider).toList()
                             .subscribeOn(Schedulers.io())
-                            .observeOn(Schedulers.immediate())
                             .subscribe(queue -> {
-                        mPlayingQueue = queue;
+                                mPlayingQueue = queue;
 
-                        LogHelper.d(TAG, "playFromSearch  playqueue.length=" + mPlayingQueue.size());
-                        mSession.setQueue(mPlayingQueue);
+                                LogHelper.d(TAG, "playFromSearch  playqueue.length=" + mPlayingQueue.size());
+                                mSession.setQueue(mPlayingQueue);
 
-                        if (mPlayingQueue != null && !mPlayingQueue.isEmpty()) {
-                            // immediately start playing from the beginning of the search results
-                            mCurrentIndexOnQueue = 0;
+                                if (mPlayingQueue != null && !mPlayingQueue.isEmpty()) {
+                                    // immediately start playing from the beginning of the search results
+                                    mCurrentIndexOnQueue = 0;
 
-                            handlePlayRequest();
-                        } else {
-                            // if nothing was found, we need to warn the user and stop playing
-                            handleStopRequest(getString(R.string.no_search_results));
-                    }
-                    });
+                                    handlePlayRequest();
+                                } else {
+                                    // if nothing was found, we need to warn the user and stop playing
+                                    handleStopRequest(getString(R.string.no_search_results));
+                                }
+                            });
                 }
             });
         }
@@ -685,7 +681,6 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
 
         mMusicProvider.getMusic(musicId).single()
                 .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.immediate())
                 .subscribe(track -> {
                     if (track == null) {
                         throw new IllegalArgumentException("Invalid musicId " + musicId);
@@ -718,7 +713,6 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                                 MediaSession.QueueItem queueItem = mPlayingQueue.get(mCurrentIndexOnQueue);
                                 mMusicProvider.getMusic(trackId).single()
                                         .subscribeOn(Schedulers.io())
-                                        .observeOn(Schedulers.immediate())
                                         .subscribe(track -> {
                                             track = new MediaMetadata.Builder(track)
 
@@ -883,7 +877,6 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
         mQueueSubscription = QueueHelper
                 .getPlayingQueue(mediaId, mMusicProvider).toList()
                 .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.immediate())
                 .subscribe(queue -> {
                     int index = QueueHelper.getMusicIndexOnQueue(queue, mediaId);
                     if (index > -1) {

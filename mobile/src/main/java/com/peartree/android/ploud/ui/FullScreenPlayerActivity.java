@@ -296,7 +296,7 @@ public class FullScreenPlayerActivity extends ActionBarCastActivity {
         Bitmap art = null;
 
         if (description.getIconBitmap() != null) {
-            // TODO: Cache bitmap
+            // TODO Cache bitmap
 
             art = description.getIconBitmap();
         } else {

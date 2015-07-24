@@ -215,7 +215,6 @@ public class CastPlayback implements Playback {
         String musicId = MediaIDHelper.extractMusicIDFromMediaID(mediaId);
         mMusicProvider.getMusic(musicId).single()
                 .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.immediate())
                 .subscribe(track -> {
                     if (track == null) {
                         throw new IllegalArgumentException("Invalid mediaId " + mediaId);

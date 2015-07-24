@@ -173,7 +173,6 @@ public class LocalPlayback implements Playback, AudioManager.OnAudioFocusChangeL
                     MediaIDHelper.extractMusicIDFromMediaID(item.getDescription().getMediaId()))
                     .single()
                     .subscribeOn(Schedulers.io())
-                    .observeOn(Schedulers.immediate())
                     .subscribe(track -> {
 
                         String source = track.getString(MusicProvider.CUSTOM_METADATA_TRACK_SOURCE);

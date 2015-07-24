@@ -62,7 +62,6 @@ public class MusicProvider {
     @Inject
     public MusicProvider(DropboxAPI<AndroidAuthSession> dbApi, DropboxDBEntryDAO entryDao, DropboxSyncService syncService) {
 
-        // TODO Better encapsulate features under syncService
         this.mDBApi = dbApi;
         this.mEntryDao = entryDao;
         this.mDBSyncService = syncService;
@@ -84,6 +83,9 @@ public class MusicProvider {
      * Results can include folders and audio files
      */
     public Observable<MediaMetadata> getMusicByFolder(@NonNull String parentFolder) {
+
+        // TODO Sort results
+
         return mDBSyncService.getDBSongSyncronizer(mEntryDao.getFindByDir(parentFolder))
                 .map(this::buildMetadataFromDBEntry);
     }
@@ -146,7 +148,7 @@ public class MusicProvider {
 
     }
 
-    public MediaMetadata buildMetadataFromDBEntry(DropboxDBEntry entry) {
+    private MediaMetadata buildMetadataFromDBEntry(DropboxDBEntry entry) {
 
         MediaMetadata.Builder builder = new MediaMetadata.Builder();
 
@@ -202,7 +204,6 @@ public class MusicProvider {
 
         mDBSyncService
                 .getDBEntrySyncronizer()
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.io())
                 .subscribe(
                         id -> {

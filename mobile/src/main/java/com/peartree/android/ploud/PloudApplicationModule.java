@@ -40,7 +40,7 @@ public class PloudApplicationModule {
     @Provides @Singleton
     DropboxAPI<AndroidAuthSession> provideDropboxAPI() {
         // TODO Fix Dropbox initialization
-        String authToken = "VrT5QL64dnkAAAAAAAGCEZZsdPzrOjNjzYbkb-c1CZxJHZ9fVNQ-KqnMVY-VOEWS"; //PrefUtils.getDropboxAuthToken(this);
+        String authToken = "VrT5QL64dnkAAAAAAAGNGPiiCUMCesGORcvuQ7TQ_stsEmxtn3tDhZ4eDmbbTl0s"; //PrefUtils.getDropboxAuthToken(this);
 
         AppKeyPair appKeys = new AppKeyPair(BuildConfig.dbApiKey, BuildConfig.dbApiSecret);
         AndroidAuthSession session = authToken != null?new AndroidAuthSession(appKeys,authToken):new AndroidAuthSession(appKeys);

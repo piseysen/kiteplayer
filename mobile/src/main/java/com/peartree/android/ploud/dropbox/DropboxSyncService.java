@@ -14,7 +14,9 @@ import com.peartree.android.ploud.database.DropboxDBSongDAO;
 import com.peartree.android.ploud.utils.LogHelper;
 import com.peartree.android.ploud.utils.PrefUtils;
 
-import java.net.URI;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.text.ParseException;
 import java.util.Date;
 import java.util.HashMap;
 
@@ -22,6 +24,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import rx.Observable;
+import rx.schedulers.Schedulers;
+import rx.subjects.PublishSubject;
 
 @Singleton
 public class DropboxSyncService {
@@ -33,6 +37,7 @@ public class DropboxSyncService {
     private DropboxDBEntryDAO mEntryDao;
     private DropboxDBSongDAO mSongDao;
 
+    private final PublishSubject<DropboxDBEntry> mMetadataSyncSubject;
 
     @Inject
     public DropboxSyncService(Application application, DropboxAPI<AndroidAuthSession> dbApi, DropboxDBEntryDAO entryDao, DropboxDBSongDAO songDao) {
@@ -40,6 +45,9 @@ public class DropboxSyncService {
         this.mDropboxApi = dbApi;
         this.mEntryDao = entryDao;
         this.mSongDao = songDao;
+        this.mMetadataSyncSubject = PublishSubject.create(); // No need to serialize
+
+        this.mMetadataSyncSubject.observeOn(Schedulers.newThread()).onBackpressureBuffer().subscribe(this::updateSongMetadata);
     }
 
     public Observable<Long> getDBEntrySyncronizer() {
@@ -68,8 +76,8 @@ public class DropboxSyncService {
 
                                 dbEntry = deltaEntry.metadata;
 
-                                if (dbEntry.isDeleted) {
-                                    mEntryDao.deleteByParentDirAndFilename(dbEntry.parentPath(), dbEntry.fileName());
+                                if (dbEntry == null || dbEntry.isDeleted) {
+                                    mEntryDao.deleteTreeByAncestorDir(deltaEntry.lcPath);
                                     continue;
                                 }
 
@@ -97,7 +105,7 @@ public class DropboxSyncService {
 
                             }
 
-                            PrefUtils.setDropboxDeltaCursor(mApplicationContext, deltaCursor);
+                            PrefUtils.setDropboxDeltaCursor(mApplicationContext, deltaPage.cursor);
 
                         } while (deltaPage.hasMore);
 
@@ -115,102 +123,143 @@ public class DropboxSyncService {
     }
 
     public Observable<DropboxDBEntry> getDBSongSyncronizer(Observable<DropboxDBEntry> entries) {
-        return Observable.create(subscriber -> {
-            entries.subscribe(entry -> {
+        return entries.map(entry -> {
 
-                if (entry.isDir()) {
-                    subscriber.onNext(entry);
-                    return;
-                }
+            if (entry.isDir()) {
+                return entry;
+            }
 
+            DropboxDBSong existingSong;
+
+            try {
+                existingSong = mSongDao.findByEntryId(entry.getId());
+            } catch (MalformedURLException|ParseException e) {
+                LogHelper.w(TAG, "Bad song data in the database for filename: " + entry.getFilename());
+                existingSong = null; // Proceed to replace song in DB
+            }
+
+            if (existingSong != null && existingSong.getDownloadURLExpiration() != null && existingSong.getDownloadURLExpiration().compareTo(new Date()) > 0) {
+                entry.setSong(existingSong);
+                return entry;
+            }
+
+            try {
+
+                DropboxAPI.DropboxLink link;
+                MediaMetadataRetriever retriever;
                 DropboxDBSong song;
 
+                // TODO Can this be deferred until link is needed (either to play or retrieve md)?
+                link = mDropboxApi.media(entry.getParentDir() + entry.getFilename(), false);
+
+                // Songs are deleted from the DB automatically when entry/file is update
+                // A song found in the database is guaranteed to have fresh metadata
+                // In that case, only the streaming/download link needs to be refreshed
+
+                song = existingSong!=null?existingSong:new DropboxDBSong();
+
                 try {
-                    song = mSongDao.findByEntryId(entry.getId());
-                } catch (Exception e) {
-                    LogHelper.w(TAG, "Bad song data in the database for filename: " + entry.getFilename());
-                    song = null; // Proceed to replace song in DB
+                    song.setDownloadURL(new URL(link.url));
+                } catch (MalformedURLException e) {
+                    LogHelper.w("Invalid URL: " + link.url + " for file: " + entry.getFilename());
+                    throw new RuntimeException(e);
                 }
 
-                if (song != null && song.getDownloadURLExpiration() != null && song.getDownloadURLExpiration().compareTo(new Date()) > 0) {
+                song.setDownloadURLExpiration(link.expires);
+
+                if (existingSong != null) {
+
+                    // TODO Prevent repeated requests
+
+                    long savedSongId = mSongDao.insertOrReplace(song);
+
+                    // TODO Move check/log to DAO
+
+                    if (savedSongId < 0) {
+                        LogHelper.w(TAG, "Error persisting song for file: " + entry.getFilename() + ". DAO returned: " + savedSongId);
+                    }
+
+                } else {
+
+                    song.setEntryId(entry.getId());
                     entry.setSong(song);
-                    subscriber.onNext(entry);
-                    return;
+
+                    // Delay saving
+                    // Retrieve metadata asynchronously
+                    mMetadataSyncSubject.onNext(entry);
+                    LogHelper.d(TAG, "Update Song Metadata - Requested: " + entry.getParentDir() + entry.getFilename());
                 }
 
-                try {
+                return entry; // Emits, whether or not song successfully persisted
 
-                    DropboxAPI.DropboxLink link;
-                    MediaMetadataRetriever retriever;
-                    DropboxDBSong newSong;
+            } catch (DropboxException e) {
+                throw new RuntimeException(e); // Is there a better way throw exceptions from within map?
+            }
 
-                    link = mDropboxApi.media(entry.getParentDir() + entry.getFilename(), false);
-
-                    retriever = new MediaMetadataRetriever();
-                    retriever.setDataSource(link.url, new HashMap<String, String>());
-
-                    newSong = new DropboxDBSong();
-
-                    try {
-                        newSong.setDownloadURL(new URI(link.url).toURL());
-                    } catch (Exception e) {
-                        LogHelper.w("Invalid URL: " + link.url + " for file: " + entry.getFilename());
-                    }
-
-                    newSong.setDownloadURLExpiration(link.expires);
-
-                    newSong.setAlbum(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM));
-                    newSong.setArtist(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST));
-                    newSong.setGenre(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_GENRE));
-                    newSong.setTitle(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE));
-
-                    String tmpString;
-
-                    if ((tmpString = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)) != null) {
-                        try {
-                            newSong.setDuration(Long.valueOf(tmpString));
-                        } catch (NumberFormatException e) {
-                            LogHelper.w(TAG, "Invalid duration: " + tmpString + " for file: " + entry.getFilename());
-                        }
-                    }
-
-                    if ((tmpString = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER)) != null) {
-                        try {
-                            newSong.setTrackNumber(Integer.valueOf(tmpString));
-                        } catch (NumberFormatException e) {
-                            LogHelper.w(TAG, "Invalid track number: " + tmpString + " for file: " + entry.getFilename());
-                        }
-                    }
-
-                    if ((tmpString = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_NUM_TRACKS)) != null)
-                        try {
-                            newSong.setTotalTracks(Integer.valueOf(tmpString));
-                        } catch (NumberFormatException e) {
-                            LogHelper.w(TAG, "Invalid number of tracks: " + tmpString + " for file: " + entry.getFilename());
-                        }
-
-                    newSong.setEntryId(entry.getId());
-
-                    long newSongId = mSongDao.insertOrReplace(newSong);
-
-                    if (newSongId > 0) {
-                        newSong.setId(newSongId);
-                    } else {
-                        LogHelper.w(TAG, "Error persisting song for file: " + entry.getFilename() + ". DAO returned: " + newSongId);
-                    }
-
-                    entry.setSong(newSong);
-                    subscriber.onNext(entry); // Emits, whether or not song successfully persisted
-
-                } catch (DropboxException e) {
-                    subscriber.onError(e);
-                }
-
-            }, error -> {
-                subscriber.onError(error);
-            }, () -> {
-                subscriber.onCompleted();
-            });
         });
+    }
+
+    private void updateSongMetadata(DropboxDBEntry entry) {
+
+        MediaMetadataRetriever retriever;
+        DropboxDBSong song = entry.getSong();
+
+        // TODO Implement permanent solution to preventing repeated requests
+        song.setId(mSongDao.insertOrReplace(song));
+
+        LogHelper.d(TAG,"Update Song Metadata - Request Received: "+entry.getParentDir()+entry.getFilename());
+
+        if (song == null) {
+            // Nothing to update
+            return;
+        }
+
+        retriever = new MediaMetadataRetriever();
+
+        try {
+            retriever.setDataSource(song.getDownloadURL().toString(), new HashMap<String, String>());
+        } catch (RuntimeException e) {
+            LogHelper.w(TAG, "Unable to use as data source: " + song.getDownloadURL());
+            // TODO Flag in DB
+            return;
+        }
+
+        LogHelper.d(TAG,"Update Song Metadata - Retriever created: "+entry.getParentDir()+entry.getFilename());
+
+        song.setAlbum(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM));
+        song.setArtist(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST));
+        song.setGenre(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_GENRE));
+        song.setTitle(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE));
+
+        String tmpString;
+
+        if ((tmpString = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)) != null) {
+            try {
+                song.setDuration(Long.valueOf(tmpString));
+            } catch (NumberFormatException e) {
+                LogHelper.w(TAG, "Invalid duration: " + tmpString + " for file: " + entry.getFilename());
+            }
+        }
+
+        if ((tmpString = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER)) != null) {
+            try {
+                song.setTrackNumber(Integer.valueOf(tmpString));
+            } catch (NumberFormatException e) {
+                LogHelper.w(TAG, "Invalid track number: " + tmpString + " for file: " + entry.getFilename());
+            }
+        }
+
+        if ((tmpString = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_NUM_TRACKS)) != null) {
+            try {
+                song.setTotalTracks(Integer.valueOf(tmpString));
+            } catch (NumberFormatException e) {
+                LogHelper.w(TAG, "Invalid number of tracks: " + tmpString + " for file: " + entry.getFilename());
+            }
+        }
+
+        mSongDao.insertOrReplace(song);
+
+        LogHelper.d(TAG, "Update Song Metadata - Database Updated: " + entry.getParentDir() + entry.getFilename());
+
     }
 }

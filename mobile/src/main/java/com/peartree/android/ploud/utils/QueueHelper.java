@@ -18,6 +18,7 @@ package com.peartree.android.ploud.utils;
 
 import android.media.MediaMetadata;
 import android.media.session.MediaSession;
+import android.media.session.MediaSession.QueueItem;
 import android.os.Bundle;
 import android.text.TextUtils;
 
@@ -29,6 +30,8 @@ import java.util.Collections;
 import java.util.List;
 
 import rx.Observable;
+import rx.Observable.Operator;
+import rx.Subscriber;
 
 import static com.peartree.android.ploud.utils.MediaIDHelper.MEDIA_ID_MUSICS_BY_FOLDER;
 import static com.peartree.android.ploud.utils.MediaIDHelper.MEDIA_ID_MUSICS_BY_SEARCH;
@@ -40,7 +43,7 @@ public class QueueHelper {
 
     private static final String TAG = LogHelper.makeLogTag(QueueHelper.class);
 
-    public static Observable<MediaSession.QueueItem> getPlayingQueue(String mediaId,
+    public static Observable<QueueItem> getPlayingQueue(String mediaId,
             MusicProvider musicProvider) {
 
         final String categoryType = MediaIDHelper.extractBrowserCategoryFromMediaID(mediaId);
@@ -58,6 +61,7 @@ public class QueueHelper {
         if (categoryType.equals(MEDIA_ID_MUSICS_BY_SEARCH)) {
             mmObservable = Observable.from(musicProvider.searchMusicBySongTitle(categories[0]));
         } else if (categoryType.equals(MEDIA_ID_MUSICS_BY_FOLDER)) {
+            // TODO Move folder formatting to utils class
             String folder = "/"+ TextUtils.join("/",categories);
             mmObservable = musicProvider
                     .getMusicByFolder(folder);
@@ -71,7 +75,7 @@ public class QueueHelper {
 
 
 
-    public static Observable<MediaSession.QueueItem> getPlayingQueueFromSearch(String query,
+    public static Observable<QueueItem> getPlayingQueueFromSearch(String query,
             Bundle queryParams, MusicProvider musicProvider) {
 
         LogHelper.d(TAG, "Creating playing queue for musics from search: ", query,
@@ -113,10 +117,10 @@ public class QueueHelper {
     }
 
 
-    public static int getMusicIndexOnQueue(Iterable<MediaSession.QueueItem> queue,
+    public static int getMusicIndexOnQueue(Iterable<QueueItem> queue,
              String mediaId) {
         int index = 0;
-        for (MediaSession.QueueItem item : queue) {
+        for (QueueItem item : queue) {
             if (mediaId.equals(item.getDescription().getMediaId())) {
                 return index;
             }
@@ -125,10 +129,10 @@ public class QueueHelper {
         return -1;
     }
 
-    public static int getMusicIndexOnQueue(Iterable<MediaSession.QueueItem> queue,
+    public static int getMusicIndexOnQueue(Iterable<QueueItem> queue,
              long queueId) {
         int index = 0;
-        for (MediaSession.QueueItem item : queue) {
+        for (QueueItem item : queue) {
             if (queueId == item.getQueueId()) {
                 return index;
             }
@@ -137,15 +141,37 @@ public class QueueHelper {
         return -1;
     }
 
-    private static Observable<MediaSession.QueueItem> convertToQueue(Observable<MediaMetadata> mmObservable,String categoryType, String... categories) {
+    private static Observable<QueueItem> convertToQueue(Observable<MediaMetadata> mmObservable,String categoryType, String... categories) {
+        
+        return mmObservable.lift(s -> new Subscriber<MediaMetadata>(s) {
 
-        Observable<Integer> count = Observable.just(1).repeat().scan(0,(x,y) -> { return x+y; });
+            private int count = 0;
 
-        return mmObservable.zip(count,mmObservable, (i,mm) -> convertToQueueItem(mm,i,categoryType,categories));
+            @Override
+            public void onCompleted() {
+                if (!s.isUnsubscribed()) {
+                    s.onCompleted();
+                }
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                if (!s.isUnsubscribed()) {
+                    s.onError(e);
+                }
+            }
+
+            @Override
+            public void onNext(MediaMetadata mm) {
+                if (!s.isUnsubscribed()) {
+                    s.onNext(convertToQueueItem(mm,count++,categoryType,categories));
+                }
+            }
+        });
 
     }
 
-    private static MediaSession.QueueItem convertToQueueItem(MediaMetadata track, int index, String categoryType, String... categories) {
+    private static QueueItem convertToQueueItem(MediaMetadata track, int index, String categoryType, String... categories) {
 
         // TODO Figure out more elegant way to combine arrays
         String[] combined = new String[categories.length+1];
@@ -158,7 +184,7 @@ public class QueueHelper {
         return convertToQueueItem(track, index, combined);
     }
 
-    private static MediaSession.QueueItem convertToQueueItem(
+    private static QueueItem convertToQueueItem(
             MediaMetadata track, int index, String... categories) {
 
         // We create a hierarchy-aware mediaID, so we know what the queue is about by looking
@@ -172,7 +198,7 @@ public class QueueHelper {
 
         // We don't expect queues to change after created, so we use the item index as the
         // queueId. Any other number unique in the queue would work.
-        MediaSession.QueueItem item = new MediaSession.QueueItem(
+        QueueItem item = new QueueItem(
                 trackCopy.getDescription(), index);
 
         return item;
@@ -184,7 +210,7 @@ public class QueueHelper {
      * @param musicProvider the provider used for fetching music.
      * @return list containing {@link MediaSession.QueueItem}'s
      */
-    public static Observable<MediaSession.QueueItem> getRandomQueue(MusicProvider musicProvider) {
+    public static Observable<QueueItem> getRandomQueue(MusicProvider musicProvider) {
         List<MediaMetadata> result = new ArrayList<>();
 
         // TODO Implement getRandomQueue
@@ -204,7 +230,7 @@ public class QueueHelper {
         return convertToQueue(Observable.from(result), MEDIA_ID_MUSICS_BY_SEARCH, "random");
     }
 
-    public static boolean isIndexPlayable(int index, List<MediaSession.QueueItem> queue) {
+    public static boolean isIndexPlayable(int index, List<QueueItem> queue) {
         return (queue != null && index >= 0 && index < queue.size());
     }
 }
