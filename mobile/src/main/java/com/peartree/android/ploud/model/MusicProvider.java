@@ -16,14 +16,12 @@
 
 package com.peartree.android.ploud.model;
 
+import android.graphics.Bitmap;
 import android.media.MediaMetadata;
-import android.media.MediaMetadataRetriever;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
-import com.dropbox.client2.exception.DropboxException;
 import com.peartree.android.ploud.database.DropboxDBEntry;
 import com.peartree.android.ploud.database.DropboxDBEntryDAO;
 import com.peartree.android.ploud.database.DropboxDBSong;
@@ -31,14 +29,11 @@ import com.peartree.android.ploud.dropbox.DropboxSyncService;
 import com.peartree.android.ploud.utils.LogHelper;
 
 import java.util.Collections;
-import java.util.HashMap;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import rx.Observable;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.exceptions.OnErrorThrowable;
 import rx.schedulers.Schedulers;
 
 /**
@@ -86,8 +81,8 @@ public class MusicProvider {
 
         // TODO Sort results
 
-        return mDBSyncService.getDBSongSyncronizer(mEntryDao.getFindByDir(parentFolder))
-                .map(this::buildMetadataFromDBEntry);
+        return mDBSyncService.updateSongDB(mEntryDao.getFindByDir(parentFolder))
+                .map(entry -> buildMetadataFromDBEntry(entry));
     }
 
 
@@ -142,44 +137,15 @@ public class MusicProvider {
      */
     public Observable<MediaMetadata> getMusic(String musicId) {
 
-        return mDBSyncService.getDBSongSyncronizer(
+        return mDBSyncService.updateSongDB(
                 Observable.just(mEntryDao.findById(Long.valueOf(musicId))))
-                .map(this::buildMetadataFromDBEntry);
+                .map(entry -> buildMetadataFromDBEntry(entry));
 
-    }
-
-    private MediaMetadata buildMetadataFromDBEntry(DropboxDBEntry entry) {
-
-        MediaMetadata.Builder builder = new MediaMetadata.Builder();
-
-        builder
-                .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, Long.toString(entry.getId()))
-                .putString(CUSTOM_METADATA_FILENAME, entry.getFilename())
-                .putString(CUSTOM_METADATA_DIRECTORY, entry.getParentDir())
-                .putString(CUSTOM_METADATA_IS_DIRECTORY, Boolean.toString(entry.isDir()));
-
-        if (!entry.isDir() && entry.getSong() != null) {
-
-            DropboxDBSong song = entry.getSong();
-
-            builder
-                    .putString(CUSTOM_METADATA_TRACK_SOURCE, song.getDownloadURL().toString())
-                    .putString(MediaMetadata.METADATA_KEY_ALBUM, song.getAlbum()!=null?song.getAlbum():entry.getParentDir())
-                    .putString(MediaMetadata.METADATA_KEY_ARTIST, song.getArtist())
-                    .putLong(MediaMetadata.METADATA_KEY_DURATION, song.getDuration())
-                    .putString(MediaMetadata.METADATA_KEY_GENRE, song.getGenre())
-                    .putString(MediaMetadata.METADATA_KEY_TITLE, song.getTitle()!=null?song.getTitle():entry.getFilename())
-                    .putLong(MediaMetadata.METADATA_KEY_TRACK_NUMBER, song.getTrackNumber())
-                    .putLong(MediaMetadata.METADATA_KEY_NUM_TRACKS, song.getTotalTracks());
-
-        }
-
-        return builder.build();
     }
 
     public synchronized void updateMusic(String musicId, MediaMetadata metadata) {
 
-        // TODO Implement updateMusic genre?
+        // TODO Implement updateMusic? This is intended to cache mm containing album art data
     }
 
     public void setFavorite(String musicId, boolean favorite) {
@@ -203,7 +169,7 @@ public class MusicProvider {
     public void retrieveMediaAsync(final Callback callback) {
 
         mDBSyncService
-                .getDBEntrySyncronizer()
+                .updateEntryDB()
                 .subscribeOn(Schedulers.io())
                 .subscribe(
                         id -> {
@@ -215,6 +181,36 @@ public class MusicProvider {
                             mCurrentState = State.INITIALIZED;
                             callback.onMusicCatalogReady(true);
                         });
+    }
+
+    public static MediaMetadata buildMetadataFromDBEntry(DropboxDBEntry entry) {
+
+        MediaMetadata.Builder builder = new MediaMetadata.Builder();
+
+        builder
+                .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, Long.toString(entry.getId()))
+                .putString(CUSTOM_METADATA_FILENAME, entry.getFilename())
+                .putString(CUSTOM_METADATA_DIRECTORY, entry.getParentDir())
+                .putString(CUSTOM_METADATA_IS_DIRECTORY, Boolean.toString(entry.isDir()));
+
+        if (!entry.isDir() && entry.getSong() != null) {
+
+            DropboxDBSong song = entry.getSong();
+
+            builder
+                    .putString(CUSTOM_METADATA_TRACK_SOURCE, song.getDownloadURL().toString())
+                    .putString(MediaMetadata.METADATA_KEY_ALBUM, song.getAlbum() != null ? song.getAlbum() : entry.getParentDir())
+                    .putString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST, song.getAlbumArtist())
+                    .putString(MediaMetadata.METADATA_KEY_ARTIST, song.getArtist())
+                    .putLong(MediaMetadata.METADATA_KEY_DURATION, song.getDuration())
+                    .putString(MediaMetadata.METADATA_KEY_GENRE, song.getGenre())
+                    .putString(MediaMetadata.METADATA_KEY_TITLE, song.getTitle()!=null?song.getTitle():entry.getFilename())
+                    .putLong(MediaMetadata.METADATA_KEY_TRACK_NUMBER, song.getTrackNumber())
+                    .putLong(MediaMetadata.METADATA_KEY_NUM_TRACKS, song.getTotalTracks());
+
+        }
+
+        return builder.build();
     }
 
 }

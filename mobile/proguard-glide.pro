@@ -3,3 +3,4 @@
     **[] $VALUES;
     public *;
 }
+-keepnames class com.peartree.android.ploud.model.AlbumArtModule

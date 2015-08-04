@@ -4,13 +4,10 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.CursorWrapper;
 
-import com.peartree.android.ploud.utils.LogHelper;
-
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
-import java.util.Date;
 
 public class DropboxDBSongMapper {
 
@@ -27,6 +24,7 @@ public class DropboxDBSongMapper {
             cv.put(DropboxDBContract.Song.COLUMN_NAME_DOWNLOAD_URL_EXPIRATION, DateFormat.getDateTimeInstance().format(song.getDownloadURLExpiration()));
 
         cv.put(DropboxDBContract.Song.COLUMN_NAME_ALBUM,song.getAlbum());
+        cv.put(DropboxDBContract.Song.COLUMN_NAME_ALBUM_ARTIST,song.getAlbumArtist());
         cv.put(DropboxDBContract.Song.COLUMN_NAME_ARTIST,song.getArtist());
         cv.put(DropboxDBContract.Song.COLUMN_NAME_GENRE,song.getGenre());
         cv.put(DropboxDBContract.Song.COLUMN_NAME_TITLE,song.getTitle());
@@ -59,6 +57,7 @@ public class DropboxDBSongMapper {
             song.setDownloadURLExpiration(DateFormat.getDateTimeInstance().parse(mCursor.getString(mCursor.getColumnIndexOrThrow(DropboxDBContract.Song.COLUMN_NAME_DOWNLOAD_URL_EXPIRATION))));
 
             song.setAlbum(mCursor.getString(mCursor.getColumnIndexOrThrow(DropboxDBContract.Song.COLUMN_NAME_ALBUM)));
+            song.setAlbumArtist(mCursor.getString(mCursor.getColumnIndexOrThrow(DropboxDBContract.Song.COLUMN_NAME_ALBUM_ARTIST)));
             song.setArtist(mCursor.getString(mCursor.getColumnIndexOrThrow(DropboxDBContract.Song.COLUMN_NAME_ARTIST)));
             song.setGenre(mCursor.getString(mCursor.getColumnIndexOrThrow(DropboxDBContract.Song.COLUMN_NAME_GENRE)));
             song.setTitle(mCursor.getString(mCursor.getColumnIndexOrThrow(DropboxDBContract.Song.COLUMN_NAME_TITLE)));

@@ -5,6 +5,7 @@ import android.app.Application;
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
+import com.peartree.android.ploud.model.AlbumArtLoader;
 import com.peartree.android.ploud.ui.ActionBarCastActivity;
 
 import javax.inject.Singleton;
@@ -24,4 +25,5 @@ public interface PloudApplicationComponent {
     Application application();
     VideoCastManager videoCastManager();
     DropboxAPI<AndroidAuthSession> dropboxAPI();
+    AlbumArtLoader albumArtLoader();
 }

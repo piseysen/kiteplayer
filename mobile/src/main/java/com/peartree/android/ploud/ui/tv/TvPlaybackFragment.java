@@ -15,14 +15,10 @@
  */
 package com.peartree.android.ploud.ui.tv;
 
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.media.MediaMetadata;
 import android.media.session.MediaController;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
@@ -48,7 +44,12 @@ import android.support.v17.leanback.widget.Row;
 import android.support.v17.leanback.widget.RowPresenter;
 import android.text.TextUtils;
 
-import com.peartree.android.ploud.AlbumArtCache;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.resource.drawable.GlideDrawable;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.peartree.android.ploud.R;
 import com.peartree.android.ploud.utils.LogHelper;
 
 import java.util.List;
@@ -268,25 +269,6 @@ public class TvPlaybackFragment extends android.support.v17.leanback.app.Playbac
         }
     }
 
-    private void updateAlbumArt(Uri artUri) {
-        AlbumArtCache.getInstance().fetch(artUri.toString(), new AlbumArtCache.FetchListener() {
-                    @Override
-                    public void onFetched(String artUrl, Bitmap bitmap, Bitmap icon) {
-                        if (bitmap != null) {
-                            Drawable artDrawable = new BitmapDrawable(
-                                    TvPlaybackFragment.this.getResources(), bitmap);
-                            Drawable bgDrawable = new BitmapDrawable(
-                                    TvPlaybackFragment.this.getResources(), bitmap);
-                            mPlaybackControlsRow.setImageDrawable(artDrawable);
-                            mBackgroundManager.setDrawable(bgDrawable);
-                            mRowsAdapter.notifyArrayItemRangeChanged(
-                                    mRowsAdapter.indexOf(mPlaybackControlsRow), 1);
-                        }
-                    }
-                }
-        );
-    }
-
     protected void updateMetadata(MediaMetadata metadata) {
         if (mPlaybackControlsRow == null) {
             initializePlaybackControls(metadata);
@@ -296,7 +278,28 @@ public class TvPlaybackFragment extends android.support.v17.leanback.app.Playbac
         ((MutableMediaMetadataHolder) mPlaybackControlsRow.getItem()).metadata = metadata;
         mRowsAdapter.notifyArrayItemRangeChanged(
                 mRowsAdapter.indexOf(mPlaybackControlsRow), 1);
-        updateAlbumArt(metadata.getDescription().getIconUri());
+
+        // TODO Test
+
+        Glide
+                .with(this)
+                .load(metadata)
+                .error(R.drawable.ic_default_art)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                // TODO Capture size in constants
+                .into(new SimpleTarget<GlideDrawable>(480, 800) {
+
+                    @Override
+                    public void onResourceReady(GlideDrawable artDrawable, GlideAnimation glideAnimation) {
+                        if (artDrawable != null) {
+                            mPlaybackControlsRow.setImageDrawable(artDrawable);
+                            mBackgroundManager.setDrawable(artDrawable);
+                            mRowsAdapter.notifyArrayItemRangeChanged(
+                                    mRowsAdapter.indexOf(mPlaybackControlsRow), 1);
+                        }
+                    }
+                });
+
     }
 
     protected void updatePlaybackState(PlaybackState state) {

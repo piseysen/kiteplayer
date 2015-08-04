@@ -28,13 +28,11 @@ import android.graphics.drawable.Drawable;
 import android.media.MediaDescription;
 import android.media.browse.MediaBrowser;
 import android.media.session.MediaSession;
-import android.net.Uri;
 import android.support.v17.leanback.widget.ImageCardView;
 import android.support.v17.leanback.widget.Presenter;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.peartree.android.ploud.AlbumArtCache;
 import com.peartree.android.ploud.R;
 import com.peartree.android.ploud.utils.LogHelper;
 
@@ -77,27 +75,9 @@ public class CardPresenter extends Presenter {
         cardViewHolder.mCardView.setContentText(description.getSubtitle());
         cardViewHolder.mCardView.setMainImageDimensions(CARD_WIDTH, CARD_HEIGHT);
 
-        Uri artUri = description.getIconUri();
-        if (artUri == null) {
-            setCardImage(cardViewHolder, description.getIconBitmap());
-        } else {
-            // IconUri potentially has a better resolution than iconBitmap.
-            String artUrl = artUri.toString();
-            AlbumArtCache cache = AlbumArtCache.getInstance();
-            if (cache.getBigImage(artUrl) != null) {
-                // So, we use it immediately if it's cached:
-                setCardImage(cardViewHolder, cache.getBigImage(artUrl));
-            } else {
-                // Otherwise, we use iconBitmap if available while we wait for iconURI
-                setCardImage(cardViewHolder, description.getIconBitmap());
-                cache.fetch(artUrl, new AlbumArtCache.FetchListener() {
-                    @Override
-                    public void onFetched(String artUrl, Bitmap bitmap, Bitmap icon) {
-                        setCardImage(cardViewHolder, bitmap);
-                    }
-                });
-            }
-        }
+        // TODO Test and determine need for fetching image if not in description
+        setCardImage(cardViewHolder, description.getIconBitmap());
+
     }
 
     private void setCardImage(CardViewHolder cardViewHolder, Bitmap art) {

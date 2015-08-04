@@ -11,6 +11,7 @@ public class DropboxDBSong {
     private Date downloadURLExpiration;
 
     private String album;
+    private String albumArtist;
     private String artist;
     private String genre;
     private String title;
@@ -20,6 +21,8 @@ public class DropboxDBSong {
     private int totalTracks;
 
     private long entryId;
+
+    private byte[] albumArt;
 
     public long getId() {
         return id;
@@ -43,6 +46,14 @@ public class DropboxDBSong {
 
     public void setDownloadURLExpiration(Date downloadURLExpiration) {
         this.downloadURLExpiration = downloadURLExpiration;
+    }
+
+    public String getAlbumArtist() {
+        return albumArtist;
+    }
+
+    public void setAlbumArtist(String albumArtist) {
+        this.albumArtist = albumArtist;
     }
 
     public String getAlbum() {
@@ -109,6 +120,14 @@ public class DropboxDBSong {
         this.entryId = entryId;
     }
 
+    public byte[] getAlbumArt() {
+        return albumArt;
+    }
+
+    public void setAlbumArt(byte[] albumArt) {
+        this.albumArt = albumArt;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -125,6 +144,7 @@ public class DropboxDBSong {
         if (_this.getDownloadURLExpiration()!=null?!_this.getDownloadURLExpiration().equals(_that.getDownloadURLExpiration()):_that.getDownloadURLExpiration()!=null) return false;
 
         if (_this.getAlbum()!=null?!_this.getAlbum().equals(_that.getAlbum()):_that.getAlbum()!=null) return false;
+        if (_this.getAlbumArtist()!=null?!_this.getAlbumArtist().equals(_that.getAlbumArtist()):_that.getAlbumArtist()!=null) return false;
         if (_this.getArtist()!=null?!_this.getArtist().equals(_that.getAlbum()):_that.getArtist()!=null) return false;
         if (_this.getGenre() !=null?!_this.getGenre().equals(_that.getGenre()):_that.getGenre() !=null) return false;
         if (_this.getTitle() !=null?!_this.getTitle().equals(_that.getTitle()):_that.getTitle() !=null) return false;
@@ -144,6 +164,7 @@ public class DropboxDBSong {
         result = 31 * result + (getDownloadURL() != null ? getDownloadURL().hashCode() : 0);
         result = 31 * result + (getDownloadURLExpiration() != null ? getDownloadURLExpiration().hashCode() : 0);
         result = 31 * result + (getAlbum() != null ? getAlbum().hashCode() : 0);
+        result = 31 * result + (getAlbumArtist() != null ? getAlbumArtist().hashCode() : 0);
         result = 31 * result + (getArtist() != null ? getArtist().hashCode() : 0);
         result = 31 * result + (getGenre() != null ? getGenre().hashCode() : 0);
         result = 31 * result + (getTitle() != null ? getTitle().hashCode() : 0);

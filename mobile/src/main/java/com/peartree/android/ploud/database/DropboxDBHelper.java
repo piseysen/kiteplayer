@@ -52,6 +52,7 @@ public class DropboxDBHelper extends SQLiteOpenHelper {
                     Song.COLUMN_NAME_DOWNLOAD_URL_EXPIRATION + " VARCHAR," +
 
                     Song.COLUMN_NAME_ALBUM + " VARCHAR," +
+                    Song.COLUMN_NAME_ALBUM_ARTIST + " VARCHAR," +
                     Song.COLUMN_NAME_ARTIST + " VARCHAR," +
                     Song.COLUMN_NAME_GENRE + " VARCHAR," +
                     Song.COLUMN_NAME_TITLE + " VARCHAR," +

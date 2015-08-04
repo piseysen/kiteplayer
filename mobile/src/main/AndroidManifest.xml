@@ -168,6 +168,11 @@
             </intent-filter>
         </activity>
 
+        <!-- Glide Module -->
+        <meta-data
+            android:name="com.peartree.android.ploud.model.AlbumArtModule"
+            android:value="GlideModule" />
+
     </application>
 
 </manifest>

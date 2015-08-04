@@ -36,6 +36,8 @@ import android.support.annotation.NonNull;
 import android.support.v7.media.MediaRouter;
 import android.text.TextUtils;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.google.android.gms.cast.ApplicationMetadata;
 import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
 import com.google.android.libraries.cast.companionlibrary.cast.callbacks.VideoCastConsumerImpl;
@@ -51,6 +53,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
@@ -699,6 +702,8 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                         throw e;
                     }
                     LogHelper.d(TAG, "Updating metadata for MusicID= " + musicId);
+
+                    // TODO Implement thread-safe metadata update method
                     mSession.setMetadata(track);
 
 
@@ -706,39 +711,56 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                     // locked screen and in other places.
                     if (track.getDescription().getIconBitmap() == null &&
                             track.getDescription().getIconUri() != null) {
-                        String albumUri = track.getDescription().getIconUri().toString();
-                        AlbumArtCache.getInstance().fetch(albumUri, new AlbumArtCache.FetchListener() {
-                            @Override
-                            public void onFetched(String artUrl, Bitmap bitmap, Bitmap icon) {
-                                MediaSession.QueueItem queueItem = mPlayingQueue.get(mCurrentIndexOnQueue);
-                                mMusicProvider.getMusic(trackId).single()
-                                        .subscribeOn(Schedulers.io())
-                                        .subscribe(track -> {
-                                            track = new MediaMetadata.Builder(track)
 
-                                                    // set high resolution bitmap in METADATA_KEY_ALBUM_ART. This is used, for
-                                                    // example, on the lockscreen background when the media session is active.
-                                                    .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, bitmap)
+                        Bitmap bitmap = null;
+                        Bitmap icon = null;
 
-                                                            // set small version of the album art in the DISPLAY_ICON. This is used on
-                                                            // the MediaDescription and thus it should be small to be serialized if
-                                                            // necessary..
-                                                    .putBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON, icon)
+                        try {
+                            bitmap = Glide
+                                    .with(this)
+                                    .load(track)
+                                    .asBitmap()
+                                    .error(R.drawable.ic_default_art)
+                                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                                    .into(480, 800)
+                                    .get();
 
-                                                    .build();
+                            icon = Glide
+                                    .with(this)
+                                    .load(track)
+                                    .asBitmap()
+                                    .error(R.drawable.ic_default_art)
+                                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                                    .into(128, 128)
+                                    .get();
 
-                                            mMusicProvider.updateMusic(trackId, track);
+                        } catch (InterruptedException|ExecutionException e) {
+                            e.printStackTrace();
+                        }
 
-                                            // If we are still playing the same music
-                                            String currentPlayingId = MediaIDHelper.extractMusicIDFromMediaID(
-                                                    queueItem.getDescription().getMediaId());
-                                            if (trackId.equals(currentPlayingId)) {
-                                                mSession.setMetadata(track);
-                                            }
-                                        });
-                            }
-                        });
+                        track = new MediaMetadata.Builder(track)
+
+                                // set high resolution bitmap in METADATA_KEY_ALBUM_ART. This is used, for
+                                // example, on the lockscreen background when the media session is active.
+                                .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, bitmap)
+
+                                        // set small version of the album art in the DISPLAY_ICON. This is used on
+                                        // the MediaDescription and thus it should be small to be serialized if
+                                        // necessary..
+                                .putBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON, icon)
+
+                                .build();
+
+                        mMusicProvider.updateMusic(trackId, track);
+
+                        // If we are still playing the same music
+                        String currentPlayingId = MediaIDHelper.extractMusicIDFromMediaID(
+                                queueItem.getDescription().getMediaId());
+                        if (trackId.equals(currentPlayingId)) {
+                            mSession.setMetadata(track);
+                        }
                     }
+
                 });
     }
 

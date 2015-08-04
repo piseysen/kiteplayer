@@ -17,7 +17,6 @@ package com.peartree.android.ploud.ui;
 
 import android.content.ComponentName;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.media.MediaDescription;
 import android.media.MediaMetadata;
@@ -35,7 +34,8 @@ import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.peartree.android.ploud.AlbumArtCache;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.peartree.android.ploud.MusicService;
 import com.peartree.android.ploud.R;
 import com.peartree.android.ploud.utils.LogHelper;
@@ -100,7 +100,7 @@ public class FullScreenPlayerActivity extends ActionBarCastActivity {
         @Override
         public void onMetadataChanged(MediaMetadata metadata) {
             if (metadata != null) {
-                updateMediaDescription(metadata.getDescription());
+                updateMediaDescription(metadata);
                 updateDuration(metadata);
             }
         }
@@ -222,7 +222,7 @@ public class FullScreenPlayerActivity extends ActionBarCastActivity {
         updatePlaybackState(state);
         MediaMetadata metadata = mediaController.getMetadata();
         if (metadata != null) {
-            updateMediaDescription(metadata.getDescription());
+            updateMediaDescription(metadata);
             updateDuration(metadata);
         }
         updateProgress();
@@ -288,53 +288,28 @@ public class FullScreenPlayerActivity extends ActionBarCastActivity {
         mExecutorService.shutdown();
     }
 
-    private void fetchImageAsync(@NonNull MediaDescription description) {
-        if (description.getIconUri() == null && description.getIconBitmap() == null) {
-            return;
-        }
+    private void updateMediaDescription(MediaMetadata mm) {
 
-        Bitmap art = null;
+        updateMediaDescription(mm.getDescription());
 
-        if (description.getIconBitmap() != null) {
-            // TODO Cache bitmap
-
-            art = description.getIconBitmap();
-        } else {
-            String artUrl = description.getIconUri().toString();
-            mCurrentArtUrl = artUrl;
-            AlbumArtCache cache = AlbumArtCache.getInstance();
-            art = cache.getBigImage(artUrl);
-
-            if (art == null){
-                // otherwise, fetch a high res version and update:
-                cache.fetch(artUrl, new AlbumArtCache.FetchListener() {
-                    @Override
-                    public void onFetched(String artUrl, Bitmap bitmap, Bitmap icon) {
-                        // sanity check, in case a new fetch request has been done while
-                        // the previous hasn't yet returned:
-                        if (artUrl.equals(mCurrentArtUrl)) {
-                            mBackgroundImage.setImageBitmap(bitmap);
-                        }
-                    }
-                });
-
-                return;
-            }
-        }
-
-        // if we have the art cached or from the MediaDescription, use it:
-        if (art != null) mBackgroundImage.setImageBitmap(art);
-
+        Glide
+                .with(this)
+                .load(mm)
+                .error(R.drawable.ic_default_art)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(mBackgroundImage);
     }
 
     private void updateMediaDescription(MediaDescription description) {
+
+        // TODO Deprecate in favor of updateMediaDescription(MediaMetadata)
+
         if (description == null) {
             return;
         }
         LogHelper.d(TAG, "updateMediaDescription called ");
         mLine1.setText(description.getTitle());
         mLine2.setText(description.getSubtitle());
-        fetchImageAsync(description);
     }
 
     private void updateDuration(MediaMetadata metadata) {
