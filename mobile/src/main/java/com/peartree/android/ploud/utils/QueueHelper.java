@@ -64,7 +64,7 @@ public class QueueHelper {
             // TODO Move folder formatting to utils class
             String folder = "/"+ TextUtils.join("/",categories);
             mmObservable = musicProvider
-                    .getMusicByFolder(folder);
+                    .getMusicByFolder(folder,true);
         } else {
             LogHelper.e(TAG, "Unrecognized category type: ", categoryType, " for media ", mediaId);
             return null;

@@ -22,8 +22,6 @@ public class DropboxDBSong {
 
     private long entryId;
 
-    private byte[] albumArt;
-
     public long getId() {
         return id;
     }
@@ -120,13 +118,6 @@ public class DropboxDBSong {
         this.entryId = entryId;
     }
 
-    public byte[] getAlbumArt() {
-        return albumArt;
-    }
-
-    public void setAlbumArt(byte[] albumArt) {
-        this.albumArt = albumArt;
-    }
 
     @Override
     public boolean equals(Object o) {

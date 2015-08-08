@@ -170,7 +170,7 @@ public class LocalPlayback implements Playback, AudioManager.OnAudioFocusChangeL
             relaxResources(false); // release everything except MediaPlayer
 
             mMusicProvider.getMusic(
-                    MediaIDHelper.extractMusicIDFromMediaID(item.getDescription().getMediaId()))
+                    MediaIDHelper.extractMusicIDFromMediaID(item.getDescription().getMediaId()),true)
                     .single()
                     .subscribeOn(Schedulers.io())
                     .subscribe(track -> {

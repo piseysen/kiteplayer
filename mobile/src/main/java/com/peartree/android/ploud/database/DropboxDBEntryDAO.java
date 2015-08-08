@@ -31,7 +31,7 @@ public class DropboxDBEntryDAO {
         SQLiteDatabase db = mDbHelper.getWritableDatabase();
         long id = db.insertWithOnConflict(Entry.TABLE_NAME, null, DropboxDBEntryMapper.toContentValues(entry), SQLiteDatabase.CONFLICT_REPLACE);
 
-        LogHelper.d(TAG,"Inserted/Updated entry with id:"+id+" for parent directory:"+entry.getParentDir()+" and filename:"+entry.getFilename());
+        LogHelper.d(TAG,"Inserted/Updated entry with id:"+id+" for: "+entry.getFullPath());
 
         return id;
     }

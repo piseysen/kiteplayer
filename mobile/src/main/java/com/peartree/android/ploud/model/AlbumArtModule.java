@@ -17,6 +17,7 @@ public class AlbumArtModule implements GlideModule {
     @Override
     public void applyOptions(Context context, GlideBuilder builder) {
 
+        // TODO Configure cache location, size, etc
     }
 
     @Override

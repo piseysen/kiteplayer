@@ -213,7 +213,7 @@ public class CastPlayback implements Playback {
     private void loadMedia(String mediaId, boolean autoPlay) throws
             TransientNetworkDisconnectionException, NoConnectionException, JSONException {
         String musicId = MediaIDHelper.extractMusicIDFromMediaID(mediaId);
-        mMusicProvider.getMusic(musicId).single()
+        mMusicProvider.getMusic(musicId,true).single()
                 .subscribeOn(Schedulers.io())
                 .subscribe(track -> {
                     if (track == null) {

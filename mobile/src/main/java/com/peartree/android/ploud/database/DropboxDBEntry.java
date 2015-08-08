@@ -143,6 +143,12 @@ public class DropboxDBEntry {
 
     public void setSong(DropboxDBSong song) { this.song = song; }
 
+    // Convenience method
+
+    public String getFullPath() {
+        return parentDir+filename;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

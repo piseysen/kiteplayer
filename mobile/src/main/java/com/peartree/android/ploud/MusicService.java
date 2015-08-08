@@ -379,7 +379,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                 folder = "/";
             }
 
-            mMusicProvider.getMusicByFolder(folder).map(mm -> {
+            mMusicProvider.getMusicByFolder(folder,false).map(mm -> {
 
                 if (Boolean.parseBoolean(mm.getString(MusicProvider.CUSTOM_METADATA_IS_DIRECTORY))) {
 
@@ -682,7 +682,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
         String musicId = MediaIDHelper.extractMusicIDFromMediaID(
                 queueItem.getDescription().getMediaId());
 
-        mMusicProvider.getMusic(musicId).single()
+        mMusicProvider.getMusic(musicId,false).single()
                 .subscribeOn(Schedulers.io())
                 .subscribe(track -> {
                     if (track == null) {
@@ -852,7 +852,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                 LogHelper.d(TAG, "getCurrentPlayingMusic for musicId=",
                         item.getDescription().getMediaId());
                 return mMusicProvider.getMusic(
-                        MediaIDHelper.extractMusicIDFromMediaID(item.getDescription().getMediaId()));
+                        MediaIDHelper.extractMusicIDFromMediaID(item.getDescription().getMediaId()),false);
             }
         }
         return Observable.empty();

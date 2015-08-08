@@ -16,9 +16,11 @@
 
 package com.peartree.android.ploud.model;
 
-import android.graphics.Bitmap;
+import android.app.Application;
+import android.content.Context;
 import android.media.MediaMetadata;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
@@ -28,6 +30,7 @@ import com.peartree.android.ploud.database.DropboxDBSong;
 import com.peartree.android.ploud.dropbox.DropboxSyncService;
 import com.peartree.android.ploud.utils.LogHelper;
 
+import java.io.File;
 import java.util.Collections;
 
 import javax.inject.Inject;
@@ -50,12 +53,19 @@ public class MusicProvider {
     public static final String CUSTOM_METADATA_DIRECTORY = "__DIRECTORY__";
     public static final String CUSTOM_METADATA_IS_DIRECTORY = "__IS_DIRECTORY__";
 
+    private Context mApplicationContext;
+
     private DropboxAPI<AndroidAuthSession> mDBApi = null;
     private DropboxDBEntryDAO mEntryDao;
     private DropboxSyncService mDBSyncService;
 
     @Inject
-    public MusicProvider(DropboxAPI<AndroidAuthSession> dbApi, DropboxDBEntryDAO entryDao, DropboxSyncService syncService) {
+    public MusicProvider(Application application,
+                         DropboxAPI<AndroidAuthSession> dbApi,
+                         DropboxDBEntryDAO entryDao,
+                         DropboxSyncService syncService) {
+
+        this.mApplicationContext = application.getApplicationContext();
 
         this.mDBApi = dbApi;
         this.mEntryDao = entryDao;
@@ -77,12 +87,12 @@ public class MusicProvider {
      * Get media by parent folder
      * Results can include folders and audio files
      */
-    public Observable<MediaMetadata> getMusicByFolder(@NonNull String parentFolder) {
+    public Observable<MediaMetadata> getMusicByFolder(@NonNull String parentFolder,boolean liveSourceRequired) {
 
         // TODO Sort results
 
-        return mDBSyncService.updateSongDB(mEntryDao.getFindByDir(parentFolder))
-                .map(entry -> buildMetadataFromDBEntry(entry));
+        return mDBSyncService.fillSongMetadata(mEntryDao.getFindByDir(parentFolder),liveSourceRequired)
+                .map(entry -> buildMetadataFromDBEntry(entry,mDBSyncService.getCachedSongFile(entry)));
     }
 
 
@@ -135,11 +145,11 @@ public class MusicProvider {
      *
      * @param musicId The unique, non-hierarchical music ID.
      */
-    public Observable<MediaMetadata> getMusic(String musicId) {
+    public Observable<MediaMetadata> getMusic(String musicId,boolean liveSourceRequired) {
 
-        return mDBSyncService.updateSongDB(
-                Observable.just(mEntryDao.findById(Long.valueOf(musicId))))
-                .map(entry -> buildMetadataFromDBEntry(entry));
+        return mDBSyncService.fillSongMetadata(
+                Observable.just(mEntryDao.findById(Long.valueOf(musicId))),liveSourceRequired)
+                .map(entry -> buildMetadataFromDBEntry(entry,mDBSyncService.getCachedSongFile(entry)));
 
     }
 
@@ -169,7 +179,7 @@ public class MusicProvider {
     public void retrieveMediaAsync(final Callback callback) {
 
         mDBSyncService
-                .updateEntryDB()
+                .synchronizeEntryDB()
                 .subscribeOn(Schedulers.io())
                 .subscribe(
                         id -> {
@@ -183,7 +193,7 @@ public class MusicProvider {
                         });
     }
 
-    public static MediaMetadata buildMetadataFromDBEntry(DropboxDBEntry entry) {
+    public static MediaMetadata buildMetadataFromDBEntry(DropboxDBEntry entry, @Nullable File cachedSongFile) {
 
         MediaMetadata.Builder builder = new MediaMetadata.Builder();
 
@@ -197,14 +207,22 @@ public class MusicProvider {
 
             DropboxDBSong song = entry.getSong();
 
+            if (cachedSongFile != null) {
+                builder.putString(CUSTOM_METADATA_TRACK_SOURCE, cachedSongFile.getAbsolutePath());
+            } else if (song.getDownloadURL() != null) {
+                // TODO Deal with expired download URLs
+                builder.putString(CUSTOM_METADATA_TRACK_SOURCE, song.getDownloadURL().toString());
+            } else {
+                // TODO Ok to return without source?
+            }
+
             builder
-                    .putString(CUSTOM_METADATA_TRACK_SOURCE, song.getDownloadURL().toString())
                     .putString(MediaMetadata.METADATA_KEY_ALBUM, song.getAlbum() != null ? song.getAlbum() : entry.getParentDir())
                     .putString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST, song.getAlbumArtist())
                     .putString(MediaMetadata.METADATA_KEY_ARTIST, song.getArtist())
                     .putLong(MediaMetadata.METADATA_KEY_DURATION, song.getDuration())
                     .putString(MediaMetadata.METADATA_KEY_GENRE, song.getGenre())
-                    .putString(MediaMetadata.METADATA_KEY_TITLE, song.getTitle()!=null?song.getTitle():entry.getFilename())
+                    .putString(MediaMetadata.METADATA_KEY_TITLE, song.getTitle()!=null ? song.getTitle() : entry.getFilename())
                     .putLong(MediaMetadata.METADATA_KEY_TRACK_NUMBER, song.getTrackNumber())
                     .putLong(MediaMetadata.METADATA_KEY_NUM_TRACKS, song.getTotalTracks());
 
