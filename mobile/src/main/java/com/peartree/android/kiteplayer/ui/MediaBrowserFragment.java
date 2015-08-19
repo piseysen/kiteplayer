@@ -285,50 +285,10 @@ public class MediaBrowserFragment extends Fragment {
             return;
         }
 
-        final String parentId = MediaIDHelper.getParentMediaID(mMediaId);
+        String[] parentHierarchy = MediaIDHelper.getHierarchy(mMediaId);
 
-        // MediaBrowser doesn't provide metadata for a given mediaID, only for its children. Since
-        // the mediaId contains the item's hierarchy, we know the item's parent mediaId and we can
-        // fetch and iterate over it and find the proper MediaItem, from which we get the title,
-        // This is temporary - a better solution (a method to get a mediaItem by its mediaID)
-        // is being worked out in the platform and should be available soon.
-        LogHelper.d(TAG, "on updateTitle: mediaId=", mMediaId, " parentID=", parentId);
-        if (parentId != null) {
-            MediaBrowser mediaBrowser = mMediaFragmentListener.getMediaBrowser();
-            LogHelper.d(TAG, "on updateTitle: mediaBrowser is ",
-                    mediaBrowser==null?"null":("not null, connected="+mediaBrowser.isConnected()));
-            if (mediaBrowser != null && mediaBrowser.isConnected()) {
-                // Unsubscribing is required to guarantee that we will get the initial values.
-                // Otherwise, if there is another callback subscribed to this mediaID, mediaBrowser
-                // will only call this callback when the media content change.
-                mediaBrowser.unsubscribe(parentId);
-                mediaBrowser.subscribe(parentId, new MediaBrowser.SubscriptionCallback() {
-                    @Override
-                    public void onChildrenLoaded(@NonNull String parentId,
-                             @NonNull List<MediaBrowser.MediaItem> children) {
-                        LogHelper.d(TAG, "Got ", children.size(), " children for ", parentId,
-                            ". Looking for ", mMediaId);
-                        for (MediaBrowser.MediaItem item: children) {
-                            LogHelper.d(TAG, "child ", item.getMediaId());
-                            if (item.getMediaId().equals(mMediaId)) {
-                                if (mMediaFragmentListener != null) {
-                                    mMediaFragmentListener.setToolbarTitle(
-                                        item.getDescription().getTitle());
-                                }
-                                return;
-                            }
-                        }
-                        mMediaFragmentListener.getMediaBrowser().unsubscribe(parentId);
-                    }
+        mMediaFragmentListener.setToolbarTitle(parentHierarchy[parentHierarchy.length - 1]);
 
-                    @Override
-                    public void onError(@NonNull String id) {
-                        super.onError(id);
-                        LogHelper.d(TAG, "subscribe error: id=", id);
-                    }
-                });
-            }
-        }
     }
 
     // An adapter for showing the list of browsed MediaItem's

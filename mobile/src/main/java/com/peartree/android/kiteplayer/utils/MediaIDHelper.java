@@ -24,6 +24,8 @@ import java.util.Arrays;
 /**
  * Utility class to help on queue related tasks.
  */
+
+// TODO Refactor whole class, consider incorporating conventions for dropbox file path
 public class MediaIDHelper {
 
     // Media IDs used on browseable items of MediaBrowser
