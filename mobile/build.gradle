@@ -7,7 +7,7 @@ android {
     buildToolsVersion "22.0.1"
 
     defaultConfig {
-        applicationId "com.peartree.android.ploud"
+        applicationId "com.peartree.android.kiteplayer"
         minSdkVersion 21
         targetSdkVersion 22
         versionCode 1
@@ -65,6 +65,7 @@ dependencies {
 
     // RxJava / RxAndroid
     compile 'io.reactivex:rxjava:1.0.+'
+    compile 'io.reactivex:rxjava-async-util:0.21.+'
     compile 'io.reactivex:rxandroid:0.25.+'
 
     // Dagger 2

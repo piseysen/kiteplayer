@@ -3,4 +3,4 @@
     **[] $VALUES;
     public *;
 }
--keepnames class com.peartree.android.ploud.model.AlbumArtModule
+-keepnames class kiteplayer.model.AlbumArtModule

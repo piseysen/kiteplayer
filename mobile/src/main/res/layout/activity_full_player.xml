@@ -45,8 +45,8 @@ limitations under the License.
             android:maxLines="1"
             android:shadowColor="@android:color/black"
             android:shadowRadius="20"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:textColor="@color/fullscreen_line_color" />
+            android:textAppearance="?attr/textAppearanceTitle"
+            android:textColor="?android:attr/textColorPrimaryInverse" />
 
         <TextView
             android:id="@+id/line2"
@@ -57,10 +57,10 @@ limitations under the License.
             android:fontFamily="sans-serif-light"
             android:gravity="center_horizontal"
             android:maxLines="1"
-            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textAppearance="?attr/textAppearanceSubhead"
             android:shadowColor="@android:color/black"
             android:shadowRadius="20"
-            android:textColor="@color/fullscreen_secondary_line_color" />
+            android:textColor="?android:attr/textColorSecondaryInverse" />
 
         <TextView
             android:id="@+id/line3"
@@ -71,10 +71,10 @@ limitations under the License.
             android:fontFamily="sans-serif-light"
             android:gravity="center_horizontal"
             android:maxLines="1"
-            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textAppearance="?attr/textAppearanceSubhead"
             android:shadowColor="@android:color/black"
             android:shadowRadius="20"
-            android:textColor="@color/fullscreen_secondary_line_color" />
+            android:textColor="?android:attr/textColorTertiaryInverse" />
 
         <LinearLayout
             android:id="@+id/controllers"

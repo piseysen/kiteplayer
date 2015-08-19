@@ -14,27 +14,74 @@
   See the License for the specific language governing permissions and
   limitations under the License.
   -->
-<com.peartree.android.ploud.ui.ScrimInsetsRelativeLayout
+<com.peartree.android.kiteplayer.ui.ScrimInsetsRelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:custom="http://schemas.android.com/apk/res-auto"
     android:layout_width="240dp"
     android:layout_height="match_parent"
     android:layout_gravity="start"
-    android:background="@android:color/white"
     android:elevation="16dp"
     android:fitsSystemWindows="true"
     android:clickable="true"
+    android:background="@android:color/white"
     custom:insetForeground="#4000">
-    <ImageView
+
+    <LinearLayout
         android:id="@+id/drawer_header"
         android:layout_width="match_parent"
         android:layout_height="200dp"
-        android:background="@color/drawer_header_background"/>
+        android:orientation="vertical"
+        android:paddingStart="?android:attr/listPreferredItemPaddingStart"
+        android:paddingEnd="?android:attr/listPreferredItemPaddingEnd"
+        android:paddingBottom="?android:attr/dividerPadding"
+        android:paddingTop="40dp"
+        android:background="@color/drawer_header_background">
+
+
+        <TextView
+            android:id="@+id/drawer_user_initial"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/user_badge"
+            android:textAppearance="?attr/textAppearanceDisplay1"
+            android:textColor="?android:attr/textColorPrimaryInverse"
+            android:text="R"
+            android:gravity="center"/>
+
+        <Space
+            android:layout_width="fill_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
+
+        <TextView
+            android:id="@+id/drawer_user_name"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:text="Rafael Pereira"
+            android:textColor="?android:attr/textColorPrimaryInverse"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:singleLine="true"
+            android:ellipsize="end"/>
+
+        <TextView
+            android:id="@+id/drawer_user_email"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:text="rafael.pereira@acme.inc"
+            android:textColor="?android:attr/textColorPrimaryInverse"
+            android:textAppearance="?attr/textAppearanceBody1"
+            android:singleLine="true"
+            android:ellipsize="end" />
+
+    </LinearLayout>
     <ListView
         android:id="@+id/drawer_list"
         android:layout_below="@id/drawer_header"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:listSelector="?android:selectableItemBackground"
-        android:drawSelectorOnTop="true"/>
-</com.peartree.android.ploud.ui.ScrimInsetsRelativeLayout>
+        android:choiceMode="singleChoice"
+        android:drawSelectorOnTop="true"
+        android:listSelector="?android:selectableItemBackground"/>
+</com.peartree.android.kiteplayer.ui.ScrimInsetsRelativeLayout>

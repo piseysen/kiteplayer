@@ -1,11 +1,11 @@
-package com.peartree.android.ploud.dropbox;
+package com.peartree.android.kiteplayer.dropbox;
 
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 
-import com.peartree.android.ploud.BuildConfig;
-import com.peartree.android.ploud.TestPloudApplication;
+import com.peartree.android.kiteplayer.BuildConfig;
+import com.peartree.android.kiteplayer.TestKiteApplication;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -17,7 +17,7 @@ import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowLog;
 
 @RunWith(RobolectricGradleTestRunner.class)
-@Config(constants = BuildConfig.class, application = TestPloudApplication.class, sdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(constants = BuildConfig.class, application = TestKiteApplication.class, sdk = Build.VERSION_CODES.LOLLIPOP)
 public class DropboxSyncServiceTest {
 
     @BeforeClass

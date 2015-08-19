@@ -14,47 +14,67 @@
   See the License for the specific language governing permissions and
   limitations under the License.
   -->
-<resources>
+<resources
+    xmlns:custom="http://schemas.android.com/apk/res-auto">
 
-    <style name="UAmpAppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="Theme.KiteApp" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:windowTranslucentStatus">true</item>
         <item name="android:windowContentTransitions">true</item>
 
-        <item name="colorPrimary">#ffff5722</item>
-        <item name="colorPrimaryDark">#ffbf360c</item>
-        <item name="colorAccent">#ffff5722</item>
+        <item name="colorPrimary">@color/app_primary</item>
+        <item name="colorPrimaryDark">@color/app_primary_dark</item>
+        <item name="colorAccent">@color/app_accent</item>
+
+        <item name="textAppearanceDisplay4">@style/TextAppearance.AppCompat.Display4</item>
+        <item name="textAppearanceDisplay3">@style/TextAppearance.AppCompat.Display3</item>
+        <item name="textAppearanceDisplay2">@style/TextAppearance.AppCompat.Display2</item>
+        <item name="textAppearanceDisplay1">@style/TextAppearance.AppCompat.Display1</item>
+        <item name="textAppearanceHeadline">@style/TextAppearance.AppCompat.Headline</item>
+        <item name="textAppearanceTitle">@style/TextAppearance.AppCompat.Title</item>
+        <item name="textAppearanceSubhead">@style/TextAppearance.AppCompat.Subhead</item>
+        <item name="textAppearanceBody2">@style/TextAppearance.AppCompat.Body2</item>
+        <item name="textAppearanceBody1">@style/TextAppearance.AppCompat.Body1</item>
+        <item name="textAppearanceCaption">@style/TextAppearance.AppCompat.Caption</item>
+        <item name="textAppearanceButton">@style/TextAppearance.AppCompat.Button</item>
+
+        <item name="android:dividerPadding">8dp</item>
     </style>
 
 
-    <style name="CarTheme" parent="UAmpAppTheme">
+    <style name="Theme.KiteCar" parent="Theme.KiteApp">
+
+        <!-- TODO Inherited setup. Simplify? -->
+
         <!-- colorPrimaryDark is currently used in Android Auto for:
              - App background
              - Drawer right side ("more" custom actions) background
              - Notification icon badge tinting
              - Overview “now playing” icon tinting
          -->
-        <item name="colorPrimaryDark">#ffbf360c</item>
+        <item name="colorPrimaryDark">@color/app_primary_dark</item>
 
         <!-- colorAccent is used in Android Auto for:
              - Spinner
              - progress bar
              - floating action button background (Play/Pause in media apps)
          -->
-        <item name="colorAccent">@color/bt_accent</item>
+        <item name="colorAccent">@color/app_accent</item>
     </style>
 
-    <style name="WearTheme" parent="UAmpAppTheme">
+    <style name="Theme.KiteWear" parent="Theme.KiteApp">
+
+        <!-- TODO Inherited setup. Simplify? -->
+
         <!-- colorPrimaryDark is currently used on Android Wear for:
              - Card background on media browse
              - Card background on 4-way media controls
          -->
-        <item name="colorPrimaryDark">#ffbf360c</item>
+        <item name="colorPrimaryDark">@color/app_primary_dark</item>
     </style>
 
-
-    <style name="Theme.UAmp.TVLeanback" parent="Theme.Leanback">
+    <style name="Theme.KiteTV" parent="Theme.Leanback">
         <item name="android:windowEnterTransition">@android:transition/fade</item>
         <item name="android:windowExitTransition">@android:transition/fade</item>
         <item name="android:windowSharedElementExitTransition">@android:transition/move</item>
@@ -66,4 +86,5 @@
         <item name="android:colorPrimaryDark">@color/tv_branding_dark</item>
         <item name="android:colorAccent">@color/tv_branding_accent</item>
     </style>
+
 </resources>

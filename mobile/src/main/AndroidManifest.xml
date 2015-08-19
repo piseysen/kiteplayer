@@ -16,7 +16,7 @@
   -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.peartree.android.ploud" >
+    package="com.peartree.android.kiteplayer" >
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -33,11 +33,11 @@
         android:required="false" />
 
     <application
-        android:name=".PloudApplication"
+        android:name=".KiteApplication"
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/UAmpAppTheme"
+        android:theme="@style/Theme.KiteApp"
         android:banner="@drawable/banner_tv">
 
         <meta-data
@@ -47,14 +47,17 @@
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
 
-        <!-- Main activity for music browsing on phone -->
-        <activity
-            android:name="com.peartree.android.ploud.ui.MusicPlayerActivity"
-            android:label="@string/app_name">
+        <activity android:name="com.peartree.android.kiteplayer.ui.AuthActivity" android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+
+        <!-- Main activity for music browsing on phone -->
+        <activity
+            android:name="com.peartree.android.kiteplayer.ui.MusicPlayerActivity"
+            android:label="@string/app_name">
 
             <!-- Use this intent filter to get voice searches, like "Play The Beatles" -->
             <intent-filter>
@@ -63,24 +66,26 @@
             </intent-filter>
         </activity>
 
-        <!-- Placeholder activity for phone UI -->
+        <!-- Settings activity for phone UI -->
         <activity
-            android:name="com.peartree.android.ploud.ui.PlaceholderActivity"
+            android:name="com.peartree.android.kiteplayer.ui.SettingsActivity"
             android:label="@string/app_name">
         </activity>
+
+        <!-- Placeholder activity for phone UI -->
 
         <!-- Proxy activity that opens either the NowPlaying TV or the mobile UI, depending on
         the current environment -->
         <activity
-            android:name="com.peartree.android.ploud.ui.NowPlayingActivity"
+            android:name="com.peartree.android.kiteplayer.ui.NowPlayingActivity"
             android:icon="@drawable/ic_launcher">
         </activity>
 
         <!-- Main activity for Android TV user interface -->
         <activity
-            android:name="com.peartree.android.ploud.ui.tv.TvBrowseActivity"
+            android:name="com.peartree.android.kiteplayer.ui.tv.TvBrowseActivity"
             android:label="@string/app_name"
-            android:theme="@style/Theme.UAmp.TVLeanback" >
+            android:theme="@style/Theme.KiteTV" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
@@ -88,15 +93,15 @@
         </activity>
 
         <activity
-            android:name="com.peartree.android.ploud.ui.tv.TvVerticalGridActivity"
-            android:theme="@style/Theme.UAmp.TVLeanback"
-            android:parentActivityName="com.peartree.android.ploud.ui.tv.TvBrowseActivity" />
+            android:name="com.peartree.android.kiteplayer.ui.tv.TvVerticalGridActivity"
+            android:theme="@style/Theme.KiteTV"
+            android:parentActivityName="com.peartree.android.kiteplayer.ui.tv.TvBrowseActivity" />
 
         <!-- Android TV UI when playing a song -->
         <activity
-            android:name="com.peartree.android.ploud.ui.tv.TvPlaybackActivity"
-            android:theme="@style/Theme.UAmp.TVLeanback"
-            android:parentActivityName="com.peartree.android.ploud.ui.tv.TvBrowseActivity" />
+            android:name="com.peartree.android.kiteplayer.ui.tv.TvPlaybackActivity"
+            android:theme="@style/Theme.KiteTV"
+            android:parentActivityName="com.peartree.android.kiteplayer.ui.tv.TvBrowseActivity" />
 
         <!--
              (OPTIONAL) use this meta data to indicate which icon should be
@@ -114,7 +119,7 @@
         -->
         <meta-data
             android:name="com.google.android.gms.car.application.theme"
-            android:resource="@style/CarTheme" />
+            android:resource="@style/Theme.KiteCar" />
 
         <!--
              (OPTIONAL) use this meta data to override the theme from which Android Wear will
@@ -124,13 +129,13 @@
         -->
         <meta-data
             android:name="com.google.android.wearable.media.theme"
-            android:resource="@style/WearTheme" />
+            android:resource="@style/Theme.KiteWear" />
 
         <!-- Main music service, provides media browsing and media playback services to
          consumers through MediaBrowserService and MediaSession. Consumers connect to it through
          MediaBrowser (for browsing) and MediaController (for play session control) -->
         <service
-            android:name="com.peartree.android.ploud.MusicService"
+            android:name="com.peartree.android.kiteplayer.MusicService"
             android:exported="true"
             tools:ignore="ExportedService">
             <intent-filter>
@@ -145,13 +150,13 @@
         <!-- A full screen activity showing controls and a seek bar for
              the current playing music -->
         <activity
-            android:name="com.peartree.android.ploud.ui.FullScreenPlayerActivity"
+            android:name="com.peartree.android.kiteplayer.ui.FullScreenPlayerActivity"
             android:label="@string/app_name"
             android:launchMode="singleTop"
-            android:parentActivityName="com.peartree.android.ploud.ui.MusicPlayerActivity">
+            android:parentActivityName="com.peartree.android.kiteplayer.ui.MusicPlayerActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.peartree.android.ploud.ui.MusicPlayerActivity"/>
+                android:value="com.peartree.android.kiteplayer.ui.MusicPlayerActivity"/>
         </activity>
 
         <!-- Dropbox login activity -->
@@ -170,7 +175,7 @@
 
         <!-- Glide Module -->
         <meta-data
-            android:name="com.peartree.android.ploud.model.AlbumArtModule"
+            android:name="com.peartree.android.kiteplayer.model.AlbumArtModule"
             android:value="GlideModule" />
 
     </application>

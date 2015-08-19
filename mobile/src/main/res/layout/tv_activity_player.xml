@@ -21,9 +21,10 @@
     android:orientation="vertical">
     <fragment
         android:id="@+id/main_browse_fragment"
-        android:name="com.peartree.android.ploud.ui.tv.TvBrowseFragment"
+        android:name="com.peartree.android.kiteplayer.ui.tv.TvBrowseFragment"
         android:layout_width="match_parent" android:layout_height="match_parent"
         tools:context=".MusicPlayerActivity" tools:deviceIds="tv"
-        tools:ignore="MergeRootFrame"/>
+        tools:ignore="MergeRootFrame"
+        tools:layout="@layout/tv_vertical_grid" />
     
 </LinearLayout>

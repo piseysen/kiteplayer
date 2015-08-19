@@ -1,4 +1,4 @@
-package com.peartree.android.ploud.dagger;
+package com.peartree.android.kiteplayer.dagger;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

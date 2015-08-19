@@ -1,9 +1,9 @@
-package com.peartree.android.ploud.database;
+package com.peartree.android.kiteplayer.database;
 
 import android.os.Build;
 
-import com.peartree.android.ploud.BuildConfig;
-import com.peartree.android.ploud.TestPloudApplication;
+import com.peartree.android.kiteplayer.BuildConfig;
+import com.peartree.android.kiteplayer.TestKiteApplication;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -20,7 +20,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 @RunWith(RobolectricGradleTestRunner.class)
-@Config(constants = BuildConfig.class, application = TestPloudApplication.class, sdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(constants = BuildConfig.class, application = TestKiteApplication.class, sdk = Build.VERSION_CODES.LOLLIPOP)
 public class DropboxDBEntryDAOTest {
 
     private static DropboxDBEntryDAO mDao;
