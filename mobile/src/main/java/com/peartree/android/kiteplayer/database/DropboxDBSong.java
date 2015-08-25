@@ -9,6 +9,8 @@ public class DropboxDBSong {
 
     private URL downloadURL;
     private Date downloadURLExpiration;
+    private boolean hasLatestMetadata;
+    private boolean hasValidAlbumArt;
 
     private String album;
     private String albumArtist;
@@ -44,6 +46,22 @@ public class DropboxDBSong {
 
     public void setDownloadURLExpiration(Date downloadURLExpiration) {
         this.downloadURLExpiration = downloadURLExpiration;
+    }
+
+    public boolean hasLatestMetadata() {
+        return hasLatestMetadata;
+    }
+
+    public void setHasLatestMetadata(boolean hasLatestMetadata) {
+        this.hasLatestMetadata = hasLatestMetadata;
+    }
+
+    public boolean hasValidAlbumArt() {
+        return hasValidAlbumArt;
+    }
+
+    public void setHasValidAlbumArt(boolean hasValidAlbumArt) {
+        this.hasValidAlbumArt = hasValidAlbumArt;
     }
 
     public String getAlbumArtist() {

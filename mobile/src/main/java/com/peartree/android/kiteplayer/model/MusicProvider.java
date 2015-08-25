@@ -53,6 +53,11 @@ public class MusicProvider {
     public static final String CUSTOM_METADATA_DIRECTORY = "__DIRECTORY__";
     public static final String CUSTOM_METADATA_IS_DIRECTORY = "__IS_DIRECTORY__";
 
+    public static final int FLAG_SONG_PLAYABLE = 1 << 0;
+    public static final int FLAG_SONG_METADATA_TEXT = 1 << 1;
+    public static final int FLAG_SONG_METADATA_IMAGE = 1 << 2;
+    public static final int FLAG_SONG_METADATA_ALL = FLAG_SONG_METADATA_TEXT | FLAG_SONG_METADATA_IMAGE;
+
     private Context mApplicationContext;
 
     private DropboxAPI<AndroidAuthSession> mDBApi = null;
@@ -87,11 +92,11 @@ public class MusicProvider {
      * Get media by parent folder
      * Results can include folders and audio files
      */
-    public Observable<MediaMetadata> getMusicByFolder(@NonNull String parentFolder,boolean liveSourceRequired) {
+    public Observable<MediaMetadata> getMusicByFolder(@NonNull String parentFolder, int cacheFlags) {
 
         // TODO Sort results
 
-        return mDBSyncService.fillSongMetadata(mEntryDao.findByParentDir(parentFolder),liveSourceRequired)
+        return mDBSyncService.fillSongMetadata(mEntryDao.findByParentDir(parentFolder), cacheFlags)
                 .map(entry -> buildMetadataFromDBEntry(entry,mDBSyncService.getCachedSongFile(entry)));
     }
 
@@ -145,10 +150,10 @@ public class MusicProvider {
      *
      * @param musicId The unique, non-hierarchical music ID.
      */
-    public Observable<MediaMetadata> getMusic(String musicId,boolean liveSourceRequired) {
+    public Observable<MediaMetadata> getMusic(String musicId, int cacheFlags) {
 
-        return mDBSyncService.fillSongMetadata(
-                Observable.just(mEntryDao.findById(Long.valueOf(musicId))),liveSourceRequired)
+        return mDBSyncService
+                .fillSongMetadata(Observable.just(mEntryDao.findById(Long.valueOf(musicId))), cacheFlags)
                 .map(entry -> buildMetadataFromDBEntry(entry,mDBSyncService.getCachedSongFile(entry)));
 
     }
@@ -210,10 +215,9 @@ public class MusicProvider {
             if (cachedSongFile != null) {
                 builder.putString(CUSTOM_METADATA_TRACK_SOURCE, cachedSongFile.getAbsolutePath());
             } else if (song.getDownloadURL() != null) {
-                // TODO Deal with expired download URLs
                 builder.putString(CUSTOM_METADATA_TRACK_SOURCE, song.getDownloadURL().toString());
             } else {
-                // TODO Ok to return without source?
+                // TODO Disable entry if missing source
             }
 
             builder

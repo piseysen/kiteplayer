@@ -19,9 +19,6 @@ import android.media.session.PlaybackState;
 import android.net.Uri;
 import android.text.TextUtils;
 
-import com.peartree.android.kiteplayer.model.MusicProvider;
-import com.peartree.android.kiteplayer.utils.LogHelper;
-import com.peartree.android.kiteplayer.utils.MediaIDHelper;
 import com.google.android.gms.cast.MediaInfo;
 import com.google.android.gms.cast.MediaMetadata;
 import com.google.android.gms.cast.MediaStatus;
@@ -31,6 +28,9 @@ import com.google.android.libraries.cast.companionlibrary.cast.callbacks.VideoCa
 import com.google.android.libraries.cast.companionlibrary.cast.exceptions.CastException;
 import com.google.android.libraries.cast.companionlibrary.cast.exceptions.NoConnectionException;
 import com.google.android.libraries.cast.companionlibrary.cast.exceptions.TransientNetworkDisconnectionException;
+import com.peartree.android.kiteplayer.model.MusicProvider;
+import com.peartree.android.kiteplayer.utils.LogHelper;
+import com.peartree.android.kiteplayer.utils.MediaIDHelper;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -213,7 +213,7 @@ public class CastPlayback implements Playback {
     private void loadMedia(String mediaId, boolean autoPlay) throws
             TransientNetworkDisconnectionException, NoConnectionException, JSONException {
         String musicId = MediaIDHelper.extractMusicIDFromMediaID(mediaId);
-        mMusicProvider.getMusic(musicId,true).single()
+        mMusicProvider.getMusic(musicId, MusicProvider.FLAG_SONG_PLAYABLE | MusicProvider.FLAG_SONG_METADATA_ALL).single()
                 .subscribeOn(Schedulers.io())
                 .subscribe(track -> {
                     if (track == null) {
@@ -272,7 +272,9 @@ public class CastPlayback implements Playback {
         // when the cast dialog is clicked.
         mediaMetadata.addImage(image);
 
-        return new MediaInfo.Builder(track.getString(MusicProvider.CUSTOM_METADATA_TRACK_SOURCE))
+        String source = track.getString(MusicProvider.CUSTOM_METADATA_TRACK_SOURCE);
+
+        return new MediaInfo.Builder(source)
                 .setContentType(MIME_TYPE_AUDIO_MPEG)
                 .setStreamType(MediaInfo.STREAM_TYPE_BUFFERED)
                 .setMetadata(mediaMetadata)

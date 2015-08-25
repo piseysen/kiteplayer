@@ -26,7 +26,6 @@ import android.media.browse.MediaBrowser;
 import android.media.browse.MediaBrowser.MediaItem;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -65,6 +64,9 @@ import static com.peartree.android.kiteplayer.utils.MediaIDHelper.MEDIA_ID_MUSIC
 import static com.peartree.android.kiteplayer.utils.MediaIDHelper.MEDIA_ID_ROOT;
 import static com.peartree.android.kiteplayer.utils.MediaIDHelper.createMediaID;
 import static com.peartree.android.kiteplayer.utils.MediaIDHelper.extractBrowseCategoryValueFromMediaID;
+import static com.peartree.android.kiteplayer.utils.SongCacheHelper.LARGE_ALBUM_ART_DIMENSIONS;
+import static com.peartree.android.kiteplayer.utils.SongCacheHelper.SMALL_ALBUM_ART_DIMENSIONS;
+
 
 
 /**
@@ -380,7 +382,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                 folder = "/";
             }
 
-            mMusicProvider.getMusicByFolder(folder,false).map(mm -> {
+            mMusicProvider.getMusicByFolder(folder, MusicProvider.FLAG_SONG_METADATA_TEXT).map(mm -> {
 
                 if (Boolean.parseBoolean(mm.getString(MusicProvider.CUSTOM_METADATA_IS_DIRECTORY))) {
 
@@ -683,7 +685,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
         String musicId = MediaIDHelper.extractMusicIDFromMediaID(
                 queueItem.getDescription().getMediaId());
 
-        mMusicProvider.getMusic(musicId,false).single()
+        mMusicProvider.getMusic(musicId, MusicProvider.FLAG_SONG_METADATA_ALL).single()
                 .subscribeOn(Schedulers.io())
                 .subscribe(track -> {
                     if (track == null) {
@@ -723,7 +725,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                                     .asBitmap()
                                     .error(R.drawable.ic_default_art)
                                     .diskCacheStrategy(DiskCacheStrategy.ALL)
-                                    .into(480, 800)
+                                    .into(LARGE_ALBUM_ART_DIMENSIONS[0], LARGE_ALBUM_ART_DIMENSIONS[1])
                                     .get();
 
                             icon = Glide
@@ -732,7 +734,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                                     .asBitmap()
                                     .error(R.drawable.ic_default_art)
                                     .diskCacheStrategy(DiskCacheStrategy.ALL)
-                                    .into(128, 128)
+                                    .into(SMALL_ALBUM_ART_DIMENSIONS[0], SMALL_ALBUM_ART_DIMENSIONS[1])
                                     .get();
 
                         } catch (InterruptedException|ExecutionException e) {
@@ -846,6 +848,8 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
         return actions;
     }
 
+    // TODO Determine if method can be safely deleted
+
     private Observable<MediaMetadata> getCurrentPlayingMusic() {
         if (QueueHelper.isIndexPlayable(mCurrentIndexOnQueue, mPlayingQueue)) {
             MediaSession.QueueItem item = mPlayingQueue.get(mCurrentIndexOnQueue);
@@ -853,7 +857,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                 LogHelper.d(TAG, "getCurrentPlayingMusic for musicId=",
                         item.getDescription().getMediaId());
                 return mMusicProvider.getMusic(
-                        MediaIDHelper.extractMusicIDFromMediaID(item.getDescription().getMediaId()),false);
+                        MediaIDHelper.extractMusicIDFromMediaID(item.getDescription().getMediaId()), MusicProvider.FLAG_SONG_PLAYABLE | MusicProvider.FLAG_SONG_METADATA_ALL);
             }
         }
         return Observable.empty();

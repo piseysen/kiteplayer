@@ -50,7 +50,7 @@ public class DropboxDBSongDAO {
 
     }
 
-    public DropboxDBSong findByEntryId(long id) throws MalformedURLException, ParseException {
+    public DropboxDBSong findByEntryId(long id) {
 
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
 

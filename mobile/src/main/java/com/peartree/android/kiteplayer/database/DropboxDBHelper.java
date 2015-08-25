@@ -50,6 +50,8 @@ public class DropboxDBHelper extends SQLiteOpenHelper {
                     Song._ID + " INTEGER PRIMARY KEY," +
                     Song.COLUMN_NAME_DOWNLOAD_URL + " VARCHAR," +
                     Song.COLUMN_NAME_DOWNLOAD_URL_EXPIRATION + " VARCHAR," +
+                    Song.COLUMN_NAME_HAS_LATEST_METADATA + " BOOLEAN," +
+                    Song.COLUMN_NAME_HAS_VALID_ALBUM_ART + " BOOLEAN DEFAULT 1," +
 
                     Song.COLUMN_NAME_ALBUM + " VARCHAR," +
                     Song.COLUMN_NAME_ALBUM_ARTIST + " VARCHAR," +

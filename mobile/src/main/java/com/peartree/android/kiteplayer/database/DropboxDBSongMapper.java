@@ -23,6 +23,9 @@ public class DropboxDBSongMapper {
         if (song.getDownloadURLExpiration() != null)
             cv.put(DropboxDBContract.Song.COLUMN_NAME_DOWNLOAD_URL_EXPIRATION, DateFormat.getDateTimeInstance().format(song.getDownloadURLExpiration()));
 
+        cv.put(DropboxDBContract.Song.COLUMN_NAME_HAS_LATEST_METADATA, song.hasLatestMetadata());
+        cv.put(DropboxDBContract.Song.COLUMN_NAME_HAS_VALID_ALBUM_ART, song.hasValidAlbumArt());
+
         cv.put(DropboxDBContract.Song.COLUMN_NAME_ALBUM,song.getAlbum());
         cv.put(DropboxDBContract.Song.COLUMN_NAME_ALBUM_ARTIST,song.getAlbumArtist());
         cv.put(DropboxDBContract.Song.COLUMN_NAME_ARTIST,song.getArtist());
@@ -48,13 +51,24 @@ public class DropboxDBSongMapper {
             this.mCursor = cursor;
         }
 
-        public DropboxDBSong getSong() throws MalformedURLException, ParseException {
+        public DropboxDBSong getSong() {
 
             DropboxDBSong song = new DropboxDBSong();
 
             song.setId(mCursor.getLong(mCursor.getColumnIndexOrThrow(DropboxDBContract.Song._ID)));
-            song.setDownloadURL(new URL(mCursor.getString(mCursor.getColumnIndexOrThrow(DropboxDBContract.Song.COLUMN_NAME_DOWNLOAD_URL))));
-            song.setDownloadURLExpiration(DateFormat.getDateTimeInstance().parse(mCursor.getString(mCursor.getColumnIndexOrThrow(DropboxDBContract.Song.COLUMN_NAME_DOWNLOAD_URL_EXPIRATION))));
+
+            if (mCursor.getString(mCursor.getColumnIndexOrThrow(DropboxDBContract.Song.COLUMN_NAME_DOWNLOAD_URL)) != null) {
+                try {
+                    song.setDownloadURL(new URL(mCursor.getString(mCursor.getColumnIndexOrThrow(DropboxDBContract.Song.COLUMN_NAME_DOWNLOAD_URL))));
+                    song.setDownloadURLExpiration(DateFormat.getDateTimeInstance().parse(mCursor.getString(mCursor.getColumnIndexOrThrow(DropboxDBContract.Song.COLUMN_NAME_DOWNLOAD_URL_EXPIRATION))));
+                } catch (MalformedURLException | ParseException e) {
+                    song.setDownloadURL(null);
+                    song.setDownloadURLExpiration(null);
+                }
+            }
+
+            song.setHasLatestMetadata(mCursor.getInt(mCursor.getColumnIndexOrThrow(DropboxDBContract.Song.COLUMN_NAME_HAS_LATEST_METADATA)) > 0);
+            song.setHasValidAlbumArt(mCursor.getInt(mCursor.getColumnIndexOrThrow(DropboxDBContract.Song.COLUMN_NAME_HAS_VALID_ALBUM_ART)) > 0);
 
             song.setAlbum(mCursor.getString(mCursor.getColumnIndexOrThrow(DropboxDBContract.Song.COLUMN_NAME_ALBUM)));
             song.setAlbumArtist(mCursor.getString(mCursor.getColumnIndexOrThrow(DropboxDBContract.Song.COLUMN_NAME_ALBUM_ARTIST)));

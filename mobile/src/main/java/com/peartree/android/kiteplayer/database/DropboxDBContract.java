@@ -35,6 +35,8 @@ public final class DropboxDBContract {
 
         public static final String COLUMN_NAME_DOWNLOAD_URL = "download_url";
         public static final String COLUMN_NAME_DOWNLOAD_URL_EXPIRATION = "download_url_expiration";
+        public static final String COLUMN_NAME_HAS_LATEST_METADATA = "has_latest_metadata";
+        public static final String COLUMN_NAME_HAS_VALID_ALBUM_ART = "has_valid_album_art";
 
         public static final String COLUMN_NAME_ALBUM = "album";
         public static final String COLUMN_NAME_ALBUM_ARTIST = "album_artist";

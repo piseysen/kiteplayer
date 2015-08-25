@@ -5,11 +5,10 @@ import android.app.Application;
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
-import com.jakewharton.disklrucache.DiskLruCache;
 import com.peartree.android.kiteplayer.model.AlbumArtLoader;
 import com.peartree.android.kiteplayer.ui.ActionBarCastActivity;
 import com.peartree.android.kiteplayer.ui.AuthActivity;
-import com.squareup.okhttp.OkHttpClient;
+import com.peartree.android.kiteplayer.utils.ImmutableFileLRUCache;
 
 import javax.inject.Singleton;
 
@@ -29,6 +28,6 @@ public interface KiteApplicationComponent {
     VideoCastManager videoCastManager();
     DropboxAPI<AndroidAuthSession> dropboxAPI();
     AlbumArtLoader albumArtLoader();
-    DiskLruCache cachedSongs();
-    OkHttpClient httpClient();
+
+    ImmutableFileLRUCache cachedSongs();
 }

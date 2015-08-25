@@ -7,14 +7,11 @@ import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.session.AppKeyPair;
 import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
-import com.jakewharton.disklrucache.DiskLruCache;
 import com.peartree.android.kiteplayer.ui.FullScreenPlayerActivity;
+import com.peartree.android.kiteplayer.utils.ImmutableFileLRUCache;
 import com.peartree.android.kiteplayer.utils.PrefUtils;
 import com.peartree.android.kiteplayer.utils.SongCacheHelper;
 import com.squareup.okhttp.OkHttpClient;
-
-import java.io.File;
-import java.io.IOException;
 
 import javax.inject.Singleton;
 
@@ -55,14 +52,14 @@ public class KiteApplicationModule {
     }
 
     @Provides @Singleton
-    DiskLruCache provideCachedSongs() {
+    ImmutableFileLRUCache provideCachedSongs() {
 
-        File cacheDir = new File(SongCacheHelper.getDiskLRUCachePath(mApplicationContext));
+        String cacheDir = SongCacheHelper.makeLRUCacheDirectoryPath(mApplicationContext);
 
         try {
             // TODO Fix hardcoded values
-            return DiskLruCache.open(cacheDir,1,1,200 * 1024 * 1024);
-        } catch (IOException e) {
+            return new ImmutableFileLRUCache(cacheDir, 200 * 1024 * 1024);
+        } catch (ImmutableFileLRUCache.ImmutableFileLRUCacheException e) {
             return null;
         }
     }

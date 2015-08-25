@@ -34,4 +34,10 @@ public class NetworkHelper {
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         return (networkInfo != null && networkInfo.isConnected());
     }
+
+    public static boolean isNetworkMetered(Context context) {
+        ConnectivityManager connMgr = (ConnectivityManager)
+                context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        return connMgr.isActiveNetworkMetered();
+    }
 }
