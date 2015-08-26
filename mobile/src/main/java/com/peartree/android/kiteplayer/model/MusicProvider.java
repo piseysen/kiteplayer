@@ -29,6 +29,8 @@ import com.peartree.android.kiteplayer.database.DropboxDBEntryDAO;
 import com.peartree.android.kiteplayer.database.DropboxDBSong;
 import com.peartree.android.kiteplayer.dropbox.DropboxSyncService;
 import com.peartree.android.kiteplayer.utils.LogHelper;
+import com.peartree.android.kiteplayer.utils.NetworkHelper;
+import com.peartree.android.kiteplayer.utils.PrefUtils;
 
 import java.io.File;
 import java.util.Collections;
@@ -97,7 +99,11 @@ public class MusicProvider {
         // TODO Sort results
 
         return mDBSyncService.fillSongMetadata(mEntryDao.findByParentDir(parentFolder), cacheFlags)
-                .map(entry -> buildMetadataFromDBEntry(entry,mDBSyncService.getCachedSongFile(entry)));
+                .map(entry -> buildMetadataFromDBEntry(
+                        entry,
+                        mDBSyncService.getCachedSongFile(entry),
+                        !NetworkHelper.isNetworkMetered(mApplicationContext) ||
+                                PrefUtils.isStreamingOverCellularAllowed(mApplicationContext)));
     }
 
 
@@ -154,7 +160,11 @@ public class MusicProvider {
 
         return mDBSyncService
                 .fillSongMetadata(Observable.just(mEntryDao.findById(Long.valueOf(musicId))), cacheFlags)
-                .map(entry -> buildMetadataFromDBEntry(entry,mDBSyncService.getCachedSongFile(entry)));
+                .map(entry -> buildMetadataFromDBEntry(
+                        entry,
+                        mDBSyncService.getCachedSongFile(entry),
+                        !NetworkHelper.isNetworkMetered(mApplicationContext) ||
+                                PrefUtils.isStreamingOverCellularAllowed(mApplicationContext)));
 
     }
 
@@ -198,7 +208,7 @@ public class MusicProvider {
                         });
     }
 
-    public static MediaMetadata buildMetadataFromDBEntry(DropboxDBEntry entry, @Nullable File cachedSongFile) {
+    public static MediaMetadata buildMetadataFromDBEntry(DropboxDBEntry entry, @Nullable File cachedSongFile, boolean allowStreamingSource) {
 
         MediaMetadata.Builder builder = new MediaMetadata.Builder();
 
@@ -214,7 +224,7 @@ public class MusicProvider {
 
             if (cachedSongFile != null) {
                 builder.putString(CUSTOM_METADATA_TRACK_SOURCE, cachedSongFile.getAbsolutePath());
-            } else if (song.getDownloadURL() != null) {
+            } else if (song.getDownloadURL() != null && allowStreamingSource) {
                 builder.putString(CUSTOM_METADATA_TRACK_SOURCE, song.getDownloadURL().toString());
             } else {
                 // TODO Disable entry if missing source

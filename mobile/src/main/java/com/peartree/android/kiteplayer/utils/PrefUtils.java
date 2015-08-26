@@ -17,6 +17,9 @@ package com.peartree.android.kiteplayer.utils;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+
+import com.peartree.android.kiteplayer.R;
 
 /**
  * Util for setting and accessing {@link SharedPreferences} for the current application.
@@ -36,7 +39,6 @@ public class PrefUtils {
         getPreferences(context).edit().putBoolean(FTU_SHOWN, shown).apply();
     }
 
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public static boolean isFtuShown(Context context) {
         return getPreferences(context).getBoolean(FTU_SHOWN, false);
     }
@@ -55,5 +57,41 @@ public class PrefUtils {
 
     public static String getDropboxDeltaCursor(Context context) {
         return getPreferences(context).getString(DROPBOX_DELTA_CURSOR, null);
+    }
+
+    // From settings activity
+
+    public static boolean isSyncOverCellularAllowed(Context context) {
+        String prefKey = context.getResources().getString(R.string.pref_cellular_sync_key);
+        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(prefKey, false);
+    }
+
+    public static boolean isStreamingOverCellularAllowed(Context context) {
+        String prefKey = context.getResources().getString(R.string.pref_cellular_stream_key);
+        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean(prefKey, false);
+    }
+
+    public static String getCacheSize(Context context) {
+
+        String prefKey = context.getResources().getString(R.string.pref_cache_size_key);
+        String prefDefault = context.getResources().getString(R.string.pref_cache_size_default);
+
+        return PreferenceManager.getDefaultSharedPreferences(context).getString(prefKey, prefDefault);
+    }
+
+    public static void registerOnCacheSizeChangeListener(Context context, PrefChangeListener<String> listener) {
+        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener((prefs, key) -> {
+
+            String prefKey = context.getResources().getString(R.string.pref_cache_size_key);
+            String prefDefault = context.getResources().getString(R.string.pref_cache_size_default);
+
+            if (prefKey.equals(key)) {
+                listener.onPrefChanged(prefs.getString(key, prefDefault));
+            }
+        });
+    }
+
+    public interface PrefChangeListener<T> {
+        void onPrefChanged(T newValue);
     }
 }

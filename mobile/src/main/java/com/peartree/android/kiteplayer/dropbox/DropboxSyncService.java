@@ -63,7 +63,7 @@ public class DropboxSyncService {
                               DropboxAPI<AndroidAuthSession> dbApi,
                               DropboxDBEntryDAO entryDao,
                               DropboxDBSongDAO songDao,
-                              ImmutableFileLRUCache cachedSongs) {
+                              @Nullable ImmutableFileLRUCache cachedSongs) {
 
         this.mApplicationContext = application.getApplicationContext();
         this.mDropboxApi = dbApi;
@@ -79,7 +79,7 @@ public class DropboxSyncService {
                 .distinct(request -> request)
                 .window(1)
                 .onBackpressureBuffer()
-                .observeOn(Schedulers.io())
+                .observeOn(Schedulers.newThread())
                 .subscribe(this::synchronizeSongDB);
     }
 
@@ -185,14 +185,19 @@ public class DropboxSyncService {
                 mMetadataSyncQueue.onNext(new AsyncCacheRequest(entry, cacheFlags));
             }
 
-            if ((cacheFlags & FLAG_SONG_PLAYABLE) == FLAG_SONG_PLAYABLE) {
+            if ((cacheFlags & FLAG_SONG_PLAYABLE) == FLAG_SONG_PLAYABLE &&
+                    getCachedSongFile(entry) == null &&
+                    (!NetworkHelper.isNetworkMetered(mApplicationContext) ||
+                            PrefUtils.isStreamingOverCellularAllowed(mApplicationContext))) {
+
                 try {
-                    if (getCachedSongFile(entry) == null) {
-                        refreshDownloadURL(entry);
-                    }
+                    refreshDownloadURL(entry);
                 } catch (MalformedURLException | DropboxException e) {
+                    song.setDownloadURL(null);
+                    song.setDownloadURLExpiration(null);
                     LogHelper.d(TAG, "fillSongMetadata - Unable to refresh download URL for: " + entry.getFullPath(), e);
                 }
+
             }
 
             return entry;
@@ -229,24 +234,20 @@ public class DropboxSyncService {
             return;
         }
 
-        cachedSongFile = getCachedSongFile(entry, -1, cacheFlag);
-        if (cachedSongFile != null) {
+        cachedSongFile = getOrCacheSongFile(entry, -1, cacheFlag);
+        if (cachedSongFile == null && (cacheFlag & FLAG_SONG_PLAYABLE) == FLAG_SONG_PLAYABLE) {
 
-            LogHelper.d(TAG, "synchronizeSongDB - Song not cached for entry: " + entry.getFullPath());
+            LogHelper.d(TAG, "synchronizeSongDB - Song not cached. Attempting to refresh URL for entry: " + entry.getFullPath());
 
-            if (cachedSongFile == null && (cacheFlag & FLAG_SONG_PLAYABLE) == FLAG_SONG_PLAYABLE) {
-                LogHelper.d(TAG, "synchronizeSongDB - Attempting to refresh URL for entry: " + entry.getFullPath());
-
-                try {
-                    refreshDownloadURL(entry);
-                } catch (MalformedURLException | DropboxException e) {
-                    song.setDownloadURL(null);
-                    song.setDownloadURLExpiration(null);
-                    LogHelper.w(TAG, "synchronizeSongDB - Unable to refresh download URL for: " + entry.getFullPath(), e);
-                }
-                updateSongInDB = true;
-
+            try {
+                refreshDownloadURL(entry);
+            } catch (MalformedURLException | DropboxException e) {
+                song.setDownloadURL(null);
+                song.setDownloadURLExpiration(null);
+                LogHelper.w(TAG, "synchronizeSongDB - Unable to refresh download URL for: " + entry.getFullPath(), e);
             }
+            updateSongInDB = true;
+
         }
 
         MediaMetadataRetriever retriever = null;
@@ -316,7 +317,7 @@ public class DropboxSyncService {
                             .with(mApplicationContext)
                             .load(retriever.getEmbeddedPicture())
                             .fallback(R.drawable.ic_default_art)
-                            .signature(new AlbumArtLoader.Key(MusicProvider.buildMetadataFromDBEntry(entry, cachedSongFile)))
+                            .signature(new AlbumArtLoader.Key(MusicProvider.buildMetadataFromDBEntry(entry, cachedSongFile, false)))
                             .diskCacheStrategy(DiskCacheStrategy.ALL)
                             .into(LARGE_ALBUM_ART_DIMENSIONS[0], LARGE_ALBUM_ART_DIMENSIONS[1])
                             .get();
@@ -334,8 +335,6 @@ public class DropboxSyncService {
         }
 
         if (updateSongInDB) {
-
-            // TODO Understand why metadata is never saved.
             long id = mSongDao.insertOrReplace(song);
             LogHelper.d(TAG, "synchronizeSongDB - Updated song for: " + entry.getFullPath() + " with id: " + id);
         }
@@ -371,6 +370,15 @@ public class DropboxSyncService {
 
         LogHelper.d(TAG, "downloadSongDataIntoCache - Starting download of:" + entry.getFullPath());
 
+        // Null check "formality"
+        if (mCachedSongs == null) return null;
+
+        // Skip download of not allowed by user
+        if (NetworkHelper.isNetworkMetered(mApplicationContext) &&
+                !PrefUtils.isSyncOverCellularAllowed(mApplicationContext)) {
+            return null;
+        }
+
         File newCacheFile = mCachedSongs.newFile(
                 SongCacheHelper.makeLRUCacheFileName(entry),
                 cacheStream -> mDropboxApi.getFile(entry.getFullPath(), entry.getRev(), cacheStream, null));
@@ -397,7 +405,8 @@ public class DropboxSyncService {
             if (cachedSongFile != null) {
                 LogHelper.d(TAG, "initializeMediaMetadataRetriever - Initializing metadata retriever initialized for: " + entry.getFullPath() + " with file: " + cachedSongFile.getPath());
                 retriever.setDataSource(cachedSongFile.getPath());
-            } else if (song != null && song.getDownloadURL() != null) {
+            } else if (song != null && song.getDownloadURL() != null &&
+                    (!NetworkHelper.isNetworkMetered(mApplicationContext) || PrefUtils.isSyncOverCellularAllowed(mApplicationContext))) {
                 LogHelper.d(TAG, "initializeMediaMetadataRetriever - Initializing metadata retriever initialized for: " + entry.getFullPath() + " with URL: " + song.getDownloadURL());
                 retriever.setDataSource(song.getDownloadURL().toString(), new HashMap<String, String>());
             } else {
@@ -419,33 +428,30 @@ public class DropboxSyncService {
             LogHelper.d(TAG, "getAlbumArt - Starting subscriber on thread: "+Thread.currentThread().getName());
 
             DropboxDBEntry entry = mEntryDao.findById(Long.parseLong(mm.getString(MediaMetadata.METADATA_KEY_MEDIA_ID)));
+            DropboxDBSong song = entry != null ? mSongDao.findByEntryId(entry.getId()) : null;
+
 
             MediaMetadataRetriever retriever;
-            if (entry != null) {
+            if (entry != null && song != null && song.hasValidAlbumArt()) {
 
-                DropboxDBSong song = mSongDao.findByEntryId(entry.getId());
+                retriever = initializeMediaMetadataRetriever(entry, getCachedSongFile(entry));
 
-                if (song != null && song.hasValidAlbumArt()) {
+                if (retriever != null) {
 
-                    retriever = initializeMediaMetadataRetriever(entry, getCachedSongFile(entry));
+                    byte[] bitmapByteArray = retriever.getEmbeddedPicture();
 
-                    if (retriever != null) {
+                    if (bitmapByteArray != null && bitmapByteArray.length > 0) {
 
-                        byte[] bitmapByteArray = retriever.getEmbeddedPicture();
+                        subscriber.onNext(bitmapByteArray);
 
-                        if (bitmapByteArray != null && bitmapByteArray.length > 0) {
+                    } else {
 
-                            subscriber.onNext(bitmapByteArray);
+                        song.setHasValidAlbumArt(false);
+                        mSongDao.insertOrReplace(song);
 
-                        } else {
-
-                            song.setHasValidAlbumArt(false);
-                            mSongDao.insertOrReplace(song);
-
-                            subscriber.onError(new Exception("File contains no image data."));
-                            LogHelper.w(TAG, "getAlbumArt - Finished with error for: " + mm.getString(MusicProvider.CUSTOM_METADATA_TRACK_SOURCE));
-                            return;
-                        }
+                        subscriber.onError(new Exception("File contains no image data."));
+                        LogHelper.w(TAG, "getAlbumArt - Finished with error for: " + mm.getString(MusicProvider.CUSTOM_METADATA_TRACK_SOURCE));
+                        return;
                     }
                 }
             }
@@ -467,12 +473,17 @@ public class DropboxSyncService {
     public
     @Nullable
     File getCachedSongFile(DropboxDBEntry entry, long timeout) {
+
+        if (mCachedSongs == null) return null;
+
         return mCachedSongs.get(SongCacheHelper.makeLRUCacheFileName(entry), timeout);
     }
 
     public
     @Nullable
-    File getCachedSongFile(DropboxDBEntry entry, long timeout, int cacheFlag) {
+    File getOrCacheSongFile(DropboxDBEntry entry, long timeout, int cacheFlag) {
+
+        if (mCachedSongs == null) return null;
 
         File cachedSongFile =
                 mCachedSongs.get(SongCacheHelper.makeLRUCacheFileName(entry), timeout);

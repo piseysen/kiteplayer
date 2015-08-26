@@ -1,6 +1,7 @@
 package com.peartree.android.kiteplayer;
 
 import android.app.Application;
+import android.support.annotation.Nullable;
 
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
@@ -29,5 +30,6 @@ public interface KiteApplicationComponent {
     DropboxAPI<AndroidAuthSession> dropboxAPI();
     AlbumArtLoader albumArtLoader();
 
+    @Nullable
     ImmutableFileLRUCache cachedSongs();
 }

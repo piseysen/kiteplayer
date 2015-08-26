@@ -2,6 +2,7 @@ package com.peartree.android.kiteplayer;
 
 import android.app.Application;
 import android.content.Context;
+import android.support.annotation.Nullable;
 
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
@@ -10,8 +11,9 @@ import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
 import com.peartree.android.kiteplayer.ui.FullScreenPlayerActivity;
 import com.peartree.android.kiteplayer.utils.ImmutableFileLRUCache;
 import com.peartree.android.kiteplayer.utils.PrefUtils;
-import com.peartree.android.kiteplayer.utils.SongCacheHelper;
 import com.squareup.okhttp.OkHttpClient;
+
+import java.io.File;
 
 import javax.inject.Singleton;
 
@@ -46,19 +48,36 @@ public class KiteApplicationModule {
         String authToken = PrefUtils.getDropboxAuthToken(mApplication);
 
         AppKeyPair appKeys = new AppKeyPair(BuildConfig.dbApiKey, BuildConfig.dbApiSecret);
-        AndroidAuthSession session = authToken != null?new AndroidAuthSession(appKeys,authToken):new AndroidAuthSession(appKeys);
+        AndroidAuthSession session =
+                authToken != null ?
+                        new AndroidAuthSession(appKeys, authToken) :
+                        new AndroidAuthSession(appKeys);
 
         return new DropboxAPI<>(session);
     }
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
+    @Nullable
     ImmutableFileLRUCache provideCachedSongs() {
 
-        String cacheDir = SongCacheHelper.makeLRUCacheDirectoryPath(mApplicationContext);
+        File diskLRUCacheDir =
+                new File(mApplicationContext.getExternalCacheDir().getPath() +
+                        File.separator + "lrucache");
+
+        if (!diskLRUCacheDir.exists())
+            diskLRUCacheDir.mkdir();
+
+        int cacheSize = Integer.parseInt(PrefUtils.getCacheSize(mApplicationContext));
+
+        final ImmutableFileLRUCache cache =
+                new ImmutableFileLRUCache(diskLRUCacheDir.getPath(), cacheSize * 1024 * 1024);
+
+        PrefUtils.registerOnCacheSizeChangeListener(mApplicationContext,
+                newValue -> cache.setSizeLimitInBytes(Integer.parseInt(newValue) * 1024 * 1024));
 
         try {
-            // TODO Fix hardcoded values
-            return new ImmutableFileLRUCache(cacheDir, 200 * 1024 * 1024);
+            return cache;
         } catch (ImmutableFileLRUCache.ImmutableFileLRUCacheException e) {
             return null;
         }

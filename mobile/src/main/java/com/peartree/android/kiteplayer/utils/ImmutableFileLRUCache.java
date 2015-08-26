@@ -32,8 +32,10 @@ public class ImmutableFileLRUCache {
         this.mParentDirPath = parentDirPath;
         this.mSizeLimitInBytes = sizeLimitInBytes;
         this.mWriters = new ConcurrentHashMap<>();
+    }
 
-
+    public void setSizeLimitInBytes(long newSize) {
+        this.mSizeLimitInBytes = newSize;
     }
 
     private boolean validParentDir(String parentDirPath) {
