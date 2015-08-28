@@ -80,6 +80,10 @@ public class MediaItemViewHolder {
         // If the state of convertView is different, we need to adapt the view to the
         // new state.
         if (cachedState == null || cachedState != state) {
+
+            holder.mTitleView.setEnabled(true);
+            holder.mDescriptionView.setEnabled(true);
+
             switch (state) {
                 case STATE_PLAYABLE:
                     holder.mImageView.setImageDrawable(
@@ -108,6 +112,8 @@ public class MediaItemViewHolder {
                     holder.mImageView.setVisibility(View.VISIBLE);
                     break;
                 default:
+                    holder.mDescriptionView.setEnabled(false);
+                    holder.mTitleView.setEnabled(false);
                     holder.mImageView.setVisibility(View.GONE);
             }
             convertView.setTag(R.id.tag_mediaitem_state_cache, state);

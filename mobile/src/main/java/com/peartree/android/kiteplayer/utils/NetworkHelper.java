@@ -40,4 +40,12 @@ public class NetworkHelper {
                 context.getSystemService(Context.CONNECTIVITY_SERVICE);
         return connMgr.isActiveNetworkMetered();
     }
+
+    public static boolean canStream(Context context) {
+        return !isNetworkMetered(context) || PrefUtils.isStreamingOverCellularAllowed(context);
+    }
+
+    public static boolean canSync(Context context) {
+        return !isNetworkMetered(context) || PrefUtils.isSyncOverCellularAllowed(context);
+    }
 }

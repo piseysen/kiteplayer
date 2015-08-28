@@ -33,12 +33,15 @@ import com.peartree.android.kiteplayer.utils.NetworkHelper;
 import com.peartree.android.kiteplayer.utils.PrefUtils;
 
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Collections;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import rx.Observable;
+import rx.Subscriber;
 import rx.schedulers.Schedulers;
 
 /**
@@ -55,7 +58,7 @@ public class MusicProvider {
     public static final String CUSTOM_METADATA_DIRECTORY = "__DIRECTORY__";
     public static final String CUSTOM_METADATA_IS_DIRECTORY = "__IS_DIRECTORY__";
 
-    public static final int FLAG_SONG_PLAYABLE = 1 << 0;
+    public static final int FLAG_SONG_PLAY_READY = 1 << 0;
     public static final int FLAG_SONG_METADATA_TEXT = 1 << 1;
     public static final int FLAG_SONG_METADATA_IMAGE = 1 << 2;
     public static final int FLAG_SONG_METADATA_ALL = FLAG_SONG_METADATA_TEXT | FLAG_SONG_METADATA_IMAGE;
@@ -65,6 +68,8 @@ public class MusicProvider {
     private DropboxAPI<AndroidAuthSession> mDBApi = null;
     private DropboxDBEntryDAO mEntryDao;
     private DropboxSyncService mDBSyncService;
+
+    private volatile State mCurrentState = State.NON_INITIALIZED;
 
     @Inject
     public MusicProvider(Application application,
@@ -83,12 +88,44 @@ public class MusicProvider {
         NON_INITIALIZED, INITIALIZING, INITIALIZED
     }
 
-    private volatile State mCurrentState = State.NON_INITIALIZED;
-
     public interface Callback {
         void onMusicCatalogReady(boolean success);
     }
 
+    /**
+     * Get the list of music tracks from a server and caches the track information
+     */
+    public Observable<Boolean> init() {
+
+        return mDBSyncService
+                .synchronizeEntryDB()
+                .subscribeOn(Schedulers.io())
+                .lift(s -> new Subscriber<Long>(s) {
+
+                    @Override
+                    public void onCompleted() {
+                        if (!s.isUnsubscribed()) {
+                            mCurrentState = State.INITIALIZED;
+                            s.onCompleted();
+                        }
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        if (!s.isUnsubscribed()) {
+                            mCurrentState = State.NON_INITIALIZED;
+                            s.onError(e);
+                        }
+                    }
+
+                    @Override
+                    public void onNext(Long entryId) {
+                        if (!s.isUnsubscribed()) {
+                            mCurrentState = State.INITIALIZING;
+                        }
+                    }
+                });
+    }
 
     /**
      * Get media by parent folder
@@ -102,10 +139,8 @@ public class MusicProvider {
                 .map(entry -> buildMetadataFromDBEntry(
                         entry,
                         mDBSyncService.getCachedSongFile(entry),
-                        !NetworkHelper.isNetworkMetered(mApplicationContext) ||
-                                PrefUtils.isStreamingOverCellularAllowed(mApplicationContext)));
+                        NetworkHelper.canStream(mApplicationContext)));
     }
-
 
     /**
      * Very basic implementation of a search that filter music tracks with title containing
@@ -163,8 +198,7 @@ public class MusicProvider {
                 .map(entry -> buildMetadataFromDBEntry(
                         entry,
                         mDBSyncService.getCachedSongFile(entry),
-                        !NetworkHelper.isNetworkMetered(mApplicationContext) ||
-                                PrefUtils.isStreamingOverCellularAllowed(mApplicationContext)));
+                        NetworkHelper.canStream(mApplicationContext)));
 
     }
 
@@ -188,27 +222,7 @@ public class MusicProvider {
         return mCurrentState == State.INITIALIZED;
     }
 
-    /**
-     * Get the list of music tracks from a server and caches the track information
-     */
-    public void retrieveMediaAsync(final Callback callback) {
-
-        mDBSyncService
-                .synchronizeEntryDB()
-                .subscribeOn(Schedulers.io())
-                .subscribe(
-                        id -> {
-                            mCurrentState = State.INITIALIZING;
-                        }, error -> {
-                            mCurrentState = State.NON_INITIALIZED;
-                            callback.onMusicCatalogReady(false);
-                        }, () -> {
-                            mCurrentState = State.INITIALIZED;
-                            callback.onMusicCatalogReady(true);
-                        });
-    }
-
-    public static MediaMetadata buildMetadataFromDBEntry(DropboxDBEntry entry, @Nullable File cachedSongFile, boolean allowStreamingSource) {
+    public static MediaMetadata buildMetadataFromDBEntry(DropboxDBEntry entry, @Nullable File cachedSongFile, boolean canStream) {
 
         MediaMetadata.Builder builder = new MediaMetadata.Builder();
 
@@ -224,7 +238,7 @@ public class MusicProvider {
 
             if (cachedSongFile != null) {
                 builder.putString(CUSTOM_METADATA_TRACK_SOURCE, cachedSongFile.getAbsolutePath());
-            } else if (song.getDownloadURL() != null && allowStreamingSource) {
+            } else if (song.getDownloadURL() != null && canStream) {
                 builder.putString(CUSTOM_METADATA_TRACK_SOURCE, song.getDownloadURL().toString());
             } else {
                 // TODO Disable entry if missing source
@@ -243,6 +257,27 @@ public class MusicProvider {
         }
 
         return builder.build();
+    }
+
+    public static boolean willBePlayable(Context context, MediaMetadata mm) {
+
+        boolean hasSource;
+        boolean isSourceRemote;
+        boolean canStream;
+
+        hasSource = mm.getString(CUSTOM_METADATA_TRACK_SOURCE) != null;
+
+        try {
+            new URL(mm.getString(CUSTOM_METADATA_TRACK_SOURCE));
+            isSourceRemote = true;
+        } catch (MalformedURLException e) {
+            isSourceRemote = false;
+        }
+
+        canStream = NetworkHelper.canStream(context);
+
+        return hasSource && (!isSourceRemote || canStream);
+
     }
 
 }

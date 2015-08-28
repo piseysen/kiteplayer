@@ -60,14 +60,11 @@ import rx.Observable;
 import rx.Subscription;
 import rx.schedulers.Schedulers;
 
-import static com.peartree.android.kiteplayer.utils.MediaIDHelper.MEDIA_ID_MUSICS_BY_FOLDER;
 import static com.peartree.android.kiteplayer.utils.MediaIDHelper.MEDIA_ID_ROOT;
 import static com.peartree.android.kiteplayer.utils.MediaIDHelper.createMediaID;
 import static com.peartree.android.kiteplayer.utils.MediaIDHelper.extractBrowseCategoryValueFromMediaID;
 import static com.peartree.android.kiteplayer.utils.SongCacheHelper.LARGE_ALBUM_ART_DIMENSIONS;
 import static com.peartree.android.kiteplayer.utils.SongCacheHelper.SMALL_ALBUM_ART_DIMENSIONS;
-
-
 
 /**
  * This class provides a MediaBrowser through a service. It exposes the media library to a browsing
@@ -165,6 +162,9 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
     @Inject
     MusicProvider mMusicProvider;
 
+    private VideoCastManager mCastManager;
+    private Subscription mQueueSubscription;
+
     /**
      * Consumer responsible for switching the Playback instances depending on whether
      * it is connected to a remote player.
@@ -193,9 +193,6 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
             switchToPlayer(playback, false);
         }
     };
-
-    private VideoCastManager mCastManager;
-    private Subscription mQueueSubscription;
 
     /*
      * (non-Javadoc)
@@ -317,32 +314,23 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
             // on onLoadChildren, handle it accordingly.
         }
 
-        // TODO Make folder the new root
-
         return new BrowserRoot(MEDIA_ID_ROOT, null);
     }
 
     @Override
     public void onLoadChildren(@NonNull final String parentMediaId,
                                @NonNull final Result<List<MediaItem>> result) {
-        if (!mMusicProvider.isInitialized()) {
-            // Use result.detach to allow calling result.sendResult from another thread:
-            result.detach();
 
-            mMusicProvider.retrieveMediaAsync(new MusicProvider.Callback() {
-                @Override
-                public void onMusicCatalogReady(boolean success) {
-                    if (success) {
-                        loadChildrenImpl(parentMediaId, result);
-                    } else {
-                        updatePlaybackState(getString(R.string.error_no_metadata));
-                        result.sendResult(Collections.<MediaItem>emptyList());
-                    }
-                }
-            });
+        result.detach();
+
+        if (!mMusicProvider.isInitialized()) {
+
+            mMusicProvider
+                    .init()
+                    .doOnCompleted(() -> loadChildrenImpl(parentMediaId, result))
+                    .subscribe();
 
         } else {
-            // If our music catalog is already loaded/cached, load them into result immediately
             loadChildrenImpl(parentMediaId, result);
         }
     }
@@ -352,78 +340,59 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
      * initialized.
      */
     private void loadChildrenImpl(final String parentMediaId,
-                                               final Result<List<MediaBrowser.MediaItem>> result) {
+                                  final Result<List<MediaBrowser.MediaItem>> result) {
         LogHelper.d(TAG, "OnLoadChildren: parentMediaId=", parentMediaId);
 
         List<MediaBrowser.MediaItem> mediaItems = new ArrayList<>();
 
-        if (MEDIA_ID_ROOT.equals(parentMediaId)) {
-            LogHelper.d(TAG, "OnLoadChildren.ROOT");
 
-            mediaItems.add(new MediaBrowser.MediaItem(
-                    new MediaDescription.Builder()
-                            .setMediaId(MediaIDHelper.MEDIA_ID_MUSICS_BY_FOLDER)
-                            .setTitle(getString(R.string.browse_folders))
-                            .setSubtitle(getString(R.string.browse_folder_subtitle))
-                            .build(), MediaBrowser.MediaItem.FLAG_BROWSABLE
-            ));
+        LogHelper.d(TAG, "OnLoadChildren.FOLDERS");
 
-        } else if (parentMediaId.startsWith(MEDIA_ID_MUSICS_BY_FOLDER)) {
+        final String folder;
 
-            result.detach(); // TODO Review concurrency
+        if (!MEDIA_ID_ROOT.equals(parentMediaId)) {
+            folder = "/"+TextUtils.join("/",extractBrowseCategoryValueFromMediaID(parentMediaId));
+        } else {
+            folder = "/";
+        }
 
-            LogHelper.d(TAG, "OnLoadChildren.FOLDERS");
+        mMusicProvider.getMusicByFolder(folder, MusicProvider.FLAG_SONG_METADATA_TEXT).map(mm -> {
 
-            final String folder;
+            if (Boolean.parseBoolean(mm.getString(MusicProvider.CUSTOM_METADATA_IS_DIRECTORY))) {
 
-            if (!MEDIA_ID_MUSICS_BY_FOLDER.equals(parentMediaId)) {
-                folder = "/"+TextUtils.join("/",extractBrowseCategoryValueFromMediaID(parentMediaId));
+                String directoryPath = mm.getString(MusicProvider.CUSTOM_METADATA_DIRECTORY);
+                String directoryName = mm.getString(MusicProvider.CUSTOM_METADATA_FILENAME);
+
+                return new MediaItem(new MediaDescription.Builder()
+                        .setMediaId(
+                                createMediaID(null,
+                                        (MEDIA_ID_ROOT + directoryPath + directoryName).split("/")))
+                        .setTitle(directoryName).build(), MediaItem.FLAG_BROWSABLE);
+
             } else {
-                folder = "/";
+
+                String hierarchyAwareMediaID = createMediaID(
+                        mm.getDescription().getMediaId(), (MEDIA_ID_ROOT+folder).split("/"));
+                MediaMetadata trackCopy = new MediaMetadata.Builder(mm)
+                        .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, hierarchyAwareMediaID)
+                        .build();
+
+                return new MediaItem(trackCopy.getDescription(),
+                        MusicProvider.willBePlayable(this,trackCopy)?
+                                MediaItem.FLAG_PLAYABLE:0);
+
             }
 
-            mMusicProvider.getMusicByFolder(folder, MusicProvider.FLAG_SONG_METADATA_TEXT).map(mm -> {
-
-                if (Boolean.parseBoolean(mm.getString(MusicProvider.CUSTOM_METADATA_IS_DIRECTORY))) {
-
-                    String directoryPath = mm.getString(MusicProvider.CUSTOM_METADATA_DIRECTORY);
-                    String directoryName = mm.getString(MusicProvider.CUSTOM_METADATA_FILENAME);
-
-                    return new MediaItem(new MediaDescription.Builder()
-                            .setMediaId(
-                                    createMediaID(null,
-                                            (MEDIA_ID_MUSICS_BY_FOLDER + directoryPath + directoryName).split("/")))
-                            .setTitle(directoryName).build(), MediaItem.FLAG_BROWSABLE);
-
-                } else {
-
-                    String hierarchyAwareMediaID = createMediaID(
-                            mm.getDescription().getMediaId(), (MEDIA_ID_MUSICS_BY_FOLDER+folder).split("/"));
-                    MediaMetadata trackCopy = new MediaMetadata.Builder(mm)
-                            .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, hierarchyAwareMediaID)
-                            .build();
-
-                    return new MediaItem(
-                            trackCopy.getDescription(), MediaItem.FLAG_PLAYABLE);
-                }
-
-            }).subscribeOn(Schedulers.io())
-                    .subscribe(mediaItem -> {
-                        mediaItems.add(mediaItem);
-                    }, error -> {
-                        result.sendResult(Collections.emptyList());
-                    }, () -> {
-                        result.sendResult(mediaItems);
-                    });
-
-            return;
-
-        } else {
-            LogHelper.w(TAG, "Skipping unmatched parentMediaId: ", parentMediaId);
-        }
-        LogHelper.d(TAG, "OnLoadChildren sending ", mediaItems.size(),
-                " results for ", parentMediaId);
-        result.sendResult(mediaItems);
+        })
+                .subscribeOn(Schedulers.io())
+                .subscribe(
+                        mediaItem -> mediaItems.add(mediaItem),
+                        error -> result.sendResult(Collections.emptyList()),
+                        () -> {
+                            LogHelper.d(TAG, "OnLoadChildren sending ", mediaItems.size(),
+                                    " results for ", parentMediaId);
+                            result.sendResult(mediaItems);
+                        });
     }
 
     private final class MediaSessionCallback extends MediaSession.Callback {
@@ -431,15 +400,16 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
         public void onPlay() {
             LogHelper.d(TAG, "play");
 
+            // TODO Test
             if (mPlayingQueue == null || mPlayingQueue.isEmpty()) {
 
                 if (mQueueSubscription != null) {
                     mQueueSubscription.unsubscribe();
                 }
 
-                mQueueSubscription = QueueHelper
-                        .getRandomQueue(mMusicProvider).toList()
+                mQueueSubscription = QueueHelper.getRandomQueue(mMusicProvider)
                         .subscribeOn(Schedulers.io())
+                        .toList()
                         .subscribe(queue -> {
                             mPlayingQueue = queue;
                             mSession.setQueue(mPlayingQueue);
@@ -485,8 +455,9 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                 mQueueSubscription.unsubscribe();
             }
 
-            mQueueSubscription = QueueHelper.getPlayingQueue(mediaId, mMusicProvider).toList()
+            mQueueSubscription = QueueHelper.getPlayingQueue(mediaId, mMusicProvider)
                     .subscribeOn(Schedulers.io())
+                    .toList()
                     .subscribe(queue -> {
                         mPlayingQueue = queue;
                         mSession.setQueue(mPlayingQueue);
@@ -589,35 +560,36 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
 
             // Voice searches may occur before the media catalog has been
             // prepared. We only handle the search after the musicProvider is ready.
-            mMusicProvider.retrieveMediaAsync(new MusicProvider.Callback() {
-                @Override
-                public void onMusicCatalogReady(boolean success) {
+            mMusicProvider
+                    .init()
+                    .doOnCompleted(() -> {
 
-                    if (mQueueSubscription != null) {
-                        mQueueSubscription.unsubscribe();
-                    }
+                        if (mQueueSubscription != null) {
+                            mQueueSubscription.unsubscribe();
+                        }
 
-                    mQueueSubscription = QueueHelper.getPlayingQueueFromSearch(query, extras,
-                            mMusicProvider).toList()
-                            .subscribeOn(Schedulers.io())
-                            .subscribe(queue -> {
-                                mPlayingQueue = queue;
+                        mQueueSubscription = QueueHelper
+                                .getPlayingQueueFromSearch(query, extras, mMusicProvider)
+                                .subscribeOn(Schedulers.io())
+                                .toList()
+                                .subscribe(queue -> {
+                                    mPlayingQueue = queue;
 
-                                LogHelper.d(TAG, "playFromSearch  playqueue.length=" + mPlayingQueue.size());
-                                mSession.setQueue(mPlayingQueue);
+                                    LogHelper.d(TAG, "playFromSearch  playqueue.length=" + mPlayingQueue.size());
+                                    mSession.setQueue(mPlayingQueue);
 
-                                if (mPlayingQueue != null && !mPlayingQueue.isEmpty()) {
-                                    // immediately start playing from the beginning of the search results
-                                    mCurrentIndexOnQueue = 0;
+                                    if (mPlayingQueue != null && !mPlayingQueue.isEmpty()) {
+                                        // immediately start playing from the beginning of the search results
+                                        mCurrentIndexOnQueue = 0;
 
-                                    handlePlayRequest();
-                                } else {
-                                    // if nothing was found, we need to warn the user and stop playing
-                                    handleStopRequest(getString(R.string.no_search_results));
-                                }
-                            });
-                }
-            });
+                                        handlePlayRequest();
+                                    } else {
+                                        // if nothing was found, we need to warn the user and stop playing
+                                        handleStopRequest(getString(R.string.no_search_results));
+                                    }
+                                });
+                    })
+                    .subscribe();
         }
     }
 
@@ -857,7 +829,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                 LogHelper.d(TAG, "getCurrentPlayingMusic for musicId=",
                         item.getDescription().getMediaId());
                 return mMusicProvider.getMusic(
-                        MediaIDHelper.extractMusicIDFromMediaID(item.getDescription().getMediaId()), MusicProvider.FLAG_SONG_PLAYABLE | MusicProvider.FLAG_SONG_METADATA_ALL);
+                        MediaIDHelper.extractMusicIDFromMediaID(item.getDescription().getMediaId()), MusicProvider.FLAG_SONG_PLAY_READY | MusicProvider.FLAG_SONG_METADATA_ALL);
             }
         }
         return Observable.empty();
@@ -902,8 +874,9 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
         }
 
         mQueueSubscription = QueueHelper
-                .getPlayingQueue(mediaId, mMusicProvider).toList()
+                .getPlayingQueue(mediaId, mMusicProvider)
                 .subscribeOn(Schedulers.io())
+                .toList()
                 .subscribe(queue -> {
                     int index = QueueHelper.getMusicIndexOnQueue(queue, mediaId);
                     if (index > -1) {

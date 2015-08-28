@@ -40,7 +40,7 @@ import rx.subjects.PublishSubject;
 
 import static com.peartree.android.kiteplayer.model.MusicProvider.FLAG_SONG_METADATA_IMAGE;
 import static com.peartree.android.kiteplayer.model.MusicProvider.FLAG_SONG_METADATA_TEXT;
-import static com.peartree.android.kiteplayer.model.MusicProvider.FLAG_SONG_PLAYABLE;
+import static com.peartree.android.kiteplayer.model.MusicProvider.FLAG_SONG_PLAY_READY;
 import static com.peartree.android.kiteplayer.utils.SongCacheHelper.LARGE_ALBUM_ART_DIMENSIONS;
 
 @Singleton
@@ -185,10 +185,9 @@ public class DropboxSyncService {
                 mMetadataSyncQueue.onNext(new AsyncCacheRequest(entry, cacheFlags));
             }
 
-            if ((cacheFlags & FLAG_SONG_PLAYABLE) == FLAG_SONG_PLAYABLE &&
+            if ((cacheFlags & FLAG_SONG_PLAY_READY) == FLAG_SONG_PLAY_READY &&
                     getCachedSongFile(entry) == null &&
-                    (!NetworkHelper.isNetworkMetered(mApplicationContext) ||
-                            PrefUtils.isStreamingOverCellularAllowed(mApplicationContext))) {
+                    NetworkHelper.canStream(mApplicationContext)) {
 
                 try {
                     refreshDownloadURL(entry);
@@ -235,7 +234,7 @@ public class DropboxSyncService {
         }
 
         cachedSongFile = getOrCacheSongFile(entry, -1, cacheFlag);
-        if (cachedSongFile == null && (cacheFlag & FLAG_SONG_PLAYABLE) == FLAG_SONG_PLAYABLE) {
+        if (cachedSongFile == null && (cacheFlag & FLAG_SONG_PLAY_READY) == FLAG_SONG_PLAY_READY) {
 
             LogHelper.d(TAG, "synchronizeSongDB - Song not cached. Attempting to refresh URL for entry: " + entry.getFullPath());
 
@@ -374,8 +373,7 @@ public class DropboxSyncService {
         if (mCachedSongs == null) return null;
 
         // Skip download of not allowed by user
-        if (NetworkHelper.isNetworkMetered(mApplicationContext) &&
-                !PrefUtils.isSyncOverCellularAllowed(mApplicationContext)) {
+        if (!NetworkHelper.canSync(mApplicationContext)) {
             return null;
         }
 
@@ -406,7 +404,7 @@ public class DropboxSyncService {
                 LogHelper.d(TAG, "initializeMediaMetadataRetriever - Initializing metadata retriever initialized for: " + entry.getFullPath() + " with file: " + cachedSongFile.getPath());
                 retriever.setDataSource(cachedSongFile.getPath());
             } else if (song != null && song.getDownloadURL() != null &&
-                    (!NetworkHelper.isNetworkMetered(mApplicationContext) || PrefUtils.isSyncOverCellularAllowed(mApplicationContext))) {
+                    NetworkHelper.canSync(mApplicationContext)) {
                 LogHelper.d(TAG, "initializeMediaMetadataRetriever - Initializing metadata retriever initialized for: " + entry.getFullPath() + " with URL: " + song.getDownloadURL());
                 retriever.setDataSource(song.getDownloadURL().toString(), new HashMap<String, String>());
             } else {
@@ -495,7 +493,7 @@ public class DropboxSyncService {
             final boolean isCheapNetwork = !NetworkHelper.isNetworkMetered(mApplicationContext);
             final boolean isMetadataNeeded = (!song.hasLatestMetadata() &&
                     (cacheFlag & FLAG_SONG_METADATA_TEXT) == FLAG_SONG_METADATA_TEXT);
-            final boolean willSongBePlayed = (cacheFlag & FLAG_SONG_PLAYABLE) == FLAG_SONG_PLAYABLE;
+            final boolean willSongBePlayed = (cacheFlag & FLAG_SONG_PLAY_READY) == FLAG_SONG_PLAY_READY;
 
             if ((isCheapNetwork && (isMetadataNeeded || willSongBePlayed)) ||
                     (isMetadataNeeded && willSongBePlayed)) {

@@ -30,10 +30,9 @@ import java.util.Collections;
 import java.util.List;
 
 import rx.Observable;
-import rx.Subscriber;
 
-import static com.peartree.android.kiteplayer.utils.MediaIDHelper.MEDIA_ID_MUSICS_BY_FOLDER;
 import static com.peartree.android.kiteplayer.utils.MediaIDHelper.MEDIA_ID_MUSICS_BY_SEARCH;
+import static com.peartree.android.kiteplayer.utils.MediaIDHelper.MEDIA_ID_ROOT;
 
 /**
  * Utility class to help on queue related tasks.
@@ -53,23 +52,26 @@ public class QueueHelper {
             return null;
         }
 
-
         LogHelper.d(TAG, "Creating playing queue for ", categoryType, ",  ", categories);
 
         Observable<MediaMetadata> mmObservable;
         if (categoryType.equals(MEDIA_ID_MUSICS_BY_SEARCH)) {
+            // TODO Test
             mmObservable = Observable.from(musicProvider.searchMusicBySongTitle(categories[0]));
-        } else if (categoryType.equals(MEDIA_ID_MUSICS_BY_FOLDER)) {
+        } else if (categoryType.equals(MEDIA_ID_ROOT)) {
             // TODO Move folder formatting to utils class
             String folder = "/"+ TextUtils.join("/",categories);
             mmObservable = musicProvider
-                    .getMusicByFolder(folder, MusicProvider.FLAG_SONG_METADATA_TEXT);
+                    .getMusicByFolder(folder, MusicProvider.FLAG_SONG_PLAY_READY|MusicProvider.FLAG_SONG_METADATA_TEXT);
         } else {
             LogHelper.e(TAG, "Unrecognized category type: ", categoryType, " for media ", mediaId);
             return null;
         }
 
-        return convertToQueue(mmObservable,categoryType,categories);
+        return mmObservable
+                .filter(mm -> mm.getString(MusicProvider.CUSTOM_METADATA_TRACK_SOURCE) != null)
+                .lift(new CountOperator<>())
+                .map(pair -> convertToQueueItem(pair.second,pair.first,categoryType,categories));
     }
 
 
@@ -112,7 +114,11 @@ public class QueueHelper {
             result = musicProvider.searchMusicBySongTitle(query);
         }
 
-        return convertToQueue(Observable.from(result), MEDIA_ID_MUSICS_BY_SEARCH, query);
+        return Observable
+                .from(result)
+                .filter(mm -> mm.getString(MusicProvider.CUSTOM_METADATA_TRACK_SOURCE) != null)
+                .lift(new CountOperator<MediaMetadata>())
+                .map(pair -> convertToQueueItem(pair.second, pair.first, MEDIA_ID_MUSICS_BY_SEARCH, new String[]{query}));
     }
 
 
@@ -140,37 +146,7 @@ public class QueueHelper {
         return -1;
     }
 
-    private static Observable<QueueItem> convertToQueue(Observable<MediaMetadata> mmObservable,String categoryType, String... categories) {
-        
-        return mmObservable.lift(s -> new Subscriber<MediaMetadata>(s) {
-
-            private int count = 0;
-
-            @Override
-            public void onCompleted() {
-                if (!s.isUnsubscribed()) {
-                    s.onCompleted();
-                }
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                if (!s.isUnsubscribed()) {
-                    s.onError(e);
-                }
-            }
-
-            @Override
-            public void onNext(MediaMetadata mm) {
-                if (!s.isUnsubscribed()) {
-                    s.onNext(convertToQueueItem(mm,count++,categoryType,categories));
-                }
-            }
-        });
-
-    }
-
-    private static QueueItem convertToQueueItem(MediaMetadata track, int index, String categoryType, String... categories) {
+    private static QueueItem convertToQueueItem(MediaMetadata track, int index, String categoryType, String[] categories) {
 
         // TODO Figure out more elegant way to combine arrays
         String[] combined = new String[categories.length+1];
@@ -184,7 +160,7 @@ public class QueueHelper {
     }
 
     private static QueueItem convertToQueueItem(
-            MediaMetadata track, int index, String... categories) {
+            MediaMetadata track, int index, String[] categories) {
 
         // We create a hierarchy-aware mediaID, so we know what the queue is about by looking
         // at the QueueItem media IDs.
@@ -226,7 +202,11 @@ public class QueueHelper {
 
         Collections.shuffle(result);
 
-        return convertToQueue(Observable.from(result), MEDIA_ID_MUSICS_BY_SEARCH, "random");
+        return Observable
+                .from(result)
+                .filter(mm -> mm.getString(MusicProvider.CUSTOM_METADATA_TRACK_SOURCE) != null)
+                .lift(new CountOperator<>())
+                .map(pair -> convertToQueueItem(pair.second, pair.first, MEDIA_ID_MUSICS_BY_SEARCH, new String[]{"random"}));
     }
 
     public static boolean isIndexPlayable(int index, List<QueueItem> queue) {

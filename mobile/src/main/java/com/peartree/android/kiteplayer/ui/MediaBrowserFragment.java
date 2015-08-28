@@ -117,9 +117,7 @@ public class MediaBrowserFragment extends Fragment {
                         "  count=" + children.size());
                     checkForUserVisibleErrors(children.isEmpty());
                     mBrowserAdapter.clear();
-                    for (MediaBrowser.MediaItem item : children) {
-                        mBrowserAdapter.add(item);
-                    }
+                    mBrowserAdapter.addAll(children);
                     mBrowserAdapter.notifyDataSetChanged();
                 } catch (Throwable t) {
                     LogHelper.e(TAG, "Error on childrenloaded", t);
@@ -323,9 +321,11 @@ public class MediaBrowserFragment extends Fragment {
             } else if (item.isBrowsable()) {
                 itemState = MediaItemViewHolder.STATE_CLOSED_FOLDER;
             }
+
             return MediaItemViewHolder.setupView((Activity) getContext(), convertView, parent,
                 item.getDescription(), itemState);
         }
+
     }
 
     public interface MediaFragmentListener extends MediaBrowserProvider {
