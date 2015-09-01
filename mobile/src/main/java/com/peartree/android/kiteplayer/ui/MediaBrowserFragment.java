@@ -17,6 +17,7 @@ package com.peartree.android.kiteplayer.ui;
 
 import android.app.Activity;
 import android.app.Fragment;
+import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -24,16 +25,19 @@ import android.content.IntentFilter;
 import android.media.MediaMetadata;
 import android.media.browse.MediaBrowser;
 import android.media.session.MediaController;
+import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v4.widget.ContentLoadingProgressBar;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -63,6 +67,7 @@ public class MediaBrowserFragment extends Fragment {
     private BrowseAdapter mBrowserAdapter;
     private String mMediaId;
     private MediaFragmentListener mMediaFragmentListener;
+    private ProgressBar mProgressBar;
     private View mErrorView;
     private TextView mErrorMessage;
     private final BroadcastReceiver mConnectivityChangeReceiver = new BroadcastReceiver() {
@@ -102,6 +107,7 @@ public class MediaBrowserFragment extends Fragment {
         public void onPlaybackStateChanged(@NonNull PlaybackState state) {
             super.onPlaybackStateChanged(state);
             LogHelper.d(TAG, "Received state change: ", state);
+
             checkForUserVisibleErrors(false);
             mBrowserAdapter.notifyDataSetChanged();
         }
@@ -119,16 +125,24 @@ public class MediaBrowserFragment extends Fragment {
                     mBrowserAdapter.clear();
                     mBrowserAdapter.addAll(children);
                     mBrowserAdapter.notifyDataSetChanged();
+                    mMediaFragmentListener.onMediaFinishedLoading(true);
                 } catch (Throwable t) {
                     LogHelper.e(TAG, "Error on childrenloaded", t);
+                    mMediaFragmentListener.onMediaFinishedLoading(false);
+                } finally {
+                    mProgressBar.setVisibility(View.GONE);
                 }
             }
 
             @Override
             public void onError(@NonNull String id) {
                 LogHelper.e(TAG, "browse fragment subscription onError, id=" + id);
+                mProgressBar.setVisibility(View.GONE);
+
                 Toast.makeText(getActivity(), R.string.error_loading_media, Toast.LENGTH_LONG).show();
                 checkForUserVisibleErrors(true);
+
+                mMediaFragmentListener.onMediaFinishedLoading(false);
             }
         };
 
@@ -146,6 +160,8 @@ public class MediaBrowserFragment extends Fragment {
         LogHelper.d(TAG, "fragment.onCreateView");
         View rootView = inflater.inflate(R.layout.fragment_list, container, false);
 
+        mProgressBar = (ProgressBar) rootView.findViewById(R.id.loading_progressbar);
+
         mErrorView = rootView.findViewById(R.id.playback_error);
         mErrorMessage = (TextView) mErrorView.findViewById(R.id.error_message);
 
@@ -153,13 +169,10 @@ public class MediaBrowserFragment extends Fragment {
 
         ListView listView = (ListView) rootView.findViewById(R.id.list_view);
         listView.setAdapter(mBrowserAdapter);
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                checkForUserVisibleErrors(false);
-                MediaBrowser.MediaItem item = mBrowserAdapter.getItem(position);
-                mMediaFragmentListener.onMediaItemSelected(item);
-            }
+        listView.setOnItemClickListener((parent, view, position, id) -> {
+            checkForUserVisibleErrors(false);
+            MediaBrowser.MediaItem item = mBrowserAdapter.getItem(position);
+            mMediaFragmentListener.onMediaItemSelected(item);
         });
 
         return rootView;
@@ -330,6 +343,7 @@ public class MediaBrowserFragment extends Fragment {
 
     public interface MediaFragmentListener extends MediaBrowserProvider {
         void onMediaItemSelected(MediaBrowser.MediaItem item);
+        void onMediaFinishedLoading(boolean success);
         void setToolbarTitle(CharSequence title);
     }
 

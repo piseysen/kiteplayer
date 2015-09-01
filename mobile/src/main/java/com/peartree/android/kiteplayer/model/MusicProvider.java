@@ -276,7 +276,7 @@ public class MusicProvider {
 
         canStream = NetworkHelper.canStream(context);
 
-        return hasSource && (!isSourceRemote || canStream);
+        return (hasSource && !isSourceRemote) || canStream;
 
     }
 

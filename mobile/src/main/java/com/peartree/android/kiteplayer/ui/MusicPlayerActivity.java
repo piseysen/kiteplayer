@@ -19,13 +19,20 @@ import android.app.FragmentTransaction;
 import android.app.SearchManager;
 import android.content.Intent;
 import android.media.browse.MediaBrowser;
+import android.media.session.MediaController;
+import android.media.session.MediaSession;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.provider.MediaStore;
+import android.support.v7.app.AppCompatDialog;
+import android.support.v7.internal.view.ContextThemeWrapper;
 import android.text.TextUtils;
 
 import com.peartree.android.kiteplayer.R;
 import com.peartree.android.kiteplayer.utils.LogHelper;
+
+import java.util.List;
+
 
 /**
  * Main activity for the music player.
@@ -52,6 +59,26 @@ public class MusicPlayerActivity extends BaseActivity
         "com.peartree.android.kiteplayer.CURRENT_MEDIA_DESCRIPTION";
 
     private Bundle mVoiceSearchParams;
+    private AppCompatDialog mProgressDialog;
+
+    private final MediaController.Callback mediaCallback = new MediaController.Callback() {
+        @Override
+        public void onQueueChanged(List<MediaSession.QueueItem> queue) {
+            super.onQueueChanged(queue);
+            if (mProgressDialog != null && mProgressDialog.isShowing()) {
+                mProgressDialog.dismiss();
+            }
+        }
+    };
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        if (getMediaController() != null) {
+            getMediaController().unregisterCallback(mediaCallback);
+        }
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -82,13 +109,34 @@ public class MusicPlayerActivity extends BaseActivity
     @Override
     public void onMediaItemSelected(MediaBrowser.MediaItem item) {
         LogHelper.d(TAG, "onMediaItemSelected, mediaId=" + item.getMediaId());
+        boolean actionTaken = true;
         if (item.isPlayable()) {
             getMediaController().getTransportControls().playFromMediaId(item.getMediaId(), null);
+            if (mProgressDialog != null) {
+                mProgressDialog.show();
+            } else {
+                mProgressDialog = new AppCompatDialog(this) {
+                    @Override
+                    protected void onCreate(Bundle savedInstanceState) {
+                        super.onCreate(savedInstanceState);
+                        setContentView(R.layout.progress_dialog);
+                    }
+                };
+                mProgressDialog.show();
+            }
         } else if (item.isBrowsable()) {
             navigateToBrowser(item.getMediaId());
         } else {
             LogHelper.w(TAG, "Ignoring MediaItem that is neither browsable nor playable: ",
                     "mediaId=", item.getMediaId());
+            actionTaken = false;
+        }
+    }
+
+    @Override
+    public void onMediaFinishedLoading(boolean success) {
+        if (mProgressDialog != null && mProgressDialog.isShowing()) {
+            mProgressDialog.dismiss();
         }
     }
 
@@ -181,6 +229,7 @@ public class MusicPlayerActivity extends BaseActivity
             getMediaController().getTransportControls().playFromSearch(query, mVoiceSearchParams);
             mVoiceSearchParams = null;
         }
+        getMediaController().registerCallback(mediaCallback);
         getBrowseFragment().onConnected();
     }
 }
