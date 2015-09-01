@@ -176,7 +176,7 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
 
         View rootView = inflater.inflate(R.layout.fragment_list, container, false);
 
-        mSwipeLayout = (SwipeRefreshLayout) rootView;
+        mSwipeLayout = (SwipeRefreshLayout) rootView.findViewById(R.id.swipe_refresh_layout);
 
         mSwipeLayout.setOnRefreshListener(this);
         mSwipeLayout.setColorSchemeResources(R.color.app_accent);
