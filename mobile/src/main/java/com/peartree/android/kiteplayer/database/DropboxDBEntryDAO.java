@@ -110,7 +110,7 @@ public class DropboxDBEntryDAO {
 
         SQLiteDatabase db = mDbHelper.getWritableDatabase();
 
-        String selection = Entry.COLUMN_NAME_PARENT_DIR+" = ? AND "+Entry.COLUMN_NAME_FILENAME+" = ?";
+        String selection = Entry.COLUMN_NAME_PARENT_DIR+" = ? COLLATE NOCASE AND "+Entry.COLUMN_NAME_FILENAME+" = ? COLLATE NOCASE";
         String[] selectionArgs = { parentDir, filename };
 
         int deleted = db.delete(Entry.TABLE_NAME,selection,selectionArgs);
@@ -127,7 +127,7 @@ public class DropboxDBEntryDAO {
         String ancestorParent = lastSeparator>=0?ancestorPath.substring(0,lastSeparator+1):null;
         String ancestorName = lastSeparator>=0?ancestorPath.substring(lastSeparator+1):ancestorPath;
 
-        String selection = "("+Entry.COLUMN_NAME_PARENT_DIR+" = ? AND "+Entry.COLUMN_NAME_FILENAME+" = ?) OR "+Entry.COLUMN_NAME_PARENT_DIR+" LIKE ?";
+        String selection = "("+Entry.COLUMN_NAME_PARENT_DIR+" = ? COLLATE NOCASE AND "+Entry.COLUMN_NAME_FILENAME+" = ? COLLATE NOCASE) OR "+Entry.COLUMN_NAME_PARENT_DIR+" LIKE ? COLLATE NOCASE";
         String[] selectionArgs = { ancestorParent, ancestorName, ancestorPath+"%" };
 
         int deleted = db.delete(Entry.TABLE_NAME,selection,selectionArgs);

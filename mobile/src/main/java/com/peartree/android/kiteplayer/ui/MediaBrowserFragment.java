@@ -29,18 +29,20 @@ import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
+import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.v4.widget.ContentLoadingProgressBar;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.peartree.android.kiteplayer.KiteApplication;
 import com.peartree.android.kiteplayer.R;
 import com.peartree.android.kiteplayer.model.MusicProvider;
 import com.peartree.android.kiteplayer.utils.LogHelper;
@@ -50,6 +52,11 @@ import com.peartree.android.kiteplayer.utils.NetworkHelper;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
+
 /**
  * A Fragment that lists all the various browsable queues available
  * from a {@link android.service.media.MediaBrowserService}.
@@ -58,7 +65,7 @@ import java.util.List;
  * Once connected, the fragment subscribes to get all the children.
  * All {@link MediaBrowser.MediaItem}'s that can be browsed are shown in a ListView.
  */
-public class MediaBrowserFragment extends Fragment {
+public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener{
 
     private static final String TAG = LogHelper.makeLogTag(MediaBrowserFragment.class);
 
@@ -70,6 +77,12 @@ public class MediaBrowserFragment extends Fragment {
     private ProgressBar mProgressBar;
     private View mErrorView;
     private TextView mErrorMessage;
+    private SwipeRefreshLayout mSwipeLayout;
+
+
+    @Inject
+    MusicProvider mProvider;
+
     private final BroadcastReceiver mConnectivityChangeReceiver = new BroadcastReceiver() {
         private boolean oldOnline = false;
         @Override
@@ -158,9 +171,14 @@ public class MediaBrowserFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         LogHelper.d(TAG, "fragment.onCreateView");
+
+        ((KiteApplication)getActivity().getApplication()).getComponent().inject(this);
+
         View rootView = inflater.inflate(R.layout.fragment_list, container, false);
 
         mProgressBar = (ProgressBar) rootView.findViewById(R.id.loading_progressbar);
+        mSwipeLayout = (SwipeRefreshLayout) rootView;
+        mSwipeLayout.setOnRefreshListener(this);
 
         mErrorView = rootView.findViewById(R.id.playback_error);
         mErrorMessage = (TextView) mErrorView.findViewById(R.id.error_message);
@@ -257,7 +275,9 @@ public class MediaBrowserFragment extends Fragment {
         mMediaFragmentListener.getMediaBrowser().subscribe(mMediaId, mSubscriptionCallback);
 
         // Add MediaController callback so we can redraw the list when metadata changes:
+        // Unregisters first, to ensure listener isn't added multiple times
         if (getActivity().getMediaController() != null) {
+            getActivity().getMediaController().unregisterCallback(mMediaControllerCallback);
             getActivity().getMediaController().registerCallback(mMediaControllerCallback);
         }
     }
@@ -300,6 +320,25 @@ public class MediaBrowserFragment extends Fragment {
 
         mMediaFragmentListener.setToolbarTitle(parentHierarchy[parentHierarchy.length - 1]);
 
+    }
+
+    @Override
+    public void onRefresh() {
+        mProvider
+                .init()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        entryId -> {
+                            if (!mSwipeLayout.isRefreshing()) {
+                                mSwipeLayout.setRefreshing(true);
+                            }
+                        }, error -> {
+                            mSwipeLayout.setRefreshing(false);
+                        }, () -> {
+                            mSwipeLayout.setRefreshing(false);
+                            onConnected();
+                        });
     }
 
     // An adapter for showing the list of browsed MediaItem's

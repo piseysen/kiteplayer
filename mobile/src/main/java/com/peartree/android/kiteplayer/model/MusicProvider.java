@@ -88,10 +88,6 @@ public class MusicProvider {
         NON_INITIALIZED, INITIALIZING, INITIALIZED
     }
 
-    public interface Callback {
-        void onMusicCatalogReady(boolean success);
-    }
-
     /**
      * Get the list of music tracks from a server and caches the track information
      */
@@ -99,7 +95,6 @@ public class MusicProvider {
 
         return mDBSyncService
                 .synchronizeEntryDB()
-                .subscribeOn(Schedulers.io())
                 .lift(s -> new Subscriber<Long>(s) {
 
                     @Override

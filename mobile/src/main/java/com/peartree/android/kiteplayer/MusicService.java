@@ -327,6 +327,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
 
             mMusicProvider
                     .init()
+                    .subscribeOn(Schedulers.io())
                     .doOnCompleted(() -> loadChildrenImpl(parentMediaId, result))
                     .subscribe();
 
@@ -562,6 +563,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
             // prepared. We only handle the search after the musicProvider is ready.
             mMusicProvider
                     .init()
+                    .subscribeOn(Schedulers.io())
                     .doOnCompleted(() -> {
 
                         if (mQueueSubscription != null) {

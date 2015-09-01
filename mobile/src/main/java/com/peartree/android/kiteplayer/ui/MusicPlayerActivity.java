@@ -25,7 +25,6 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatDialog;
-import android.support.v7.internal.view.ContextThemeWrapper;
 import android.text.TextUtils;
 
 import com.peartree.android.kiteplayer.R;
@@ -109,7 +108,6 @@ public class MusicPlayerActivity extends BaseActivity
     @Override
     public void onMediaItemSelected(MediaBrowser.MediaItem item) {
         LogHelper.d(TAG, "onMediaItemSelected, mediaId=" + item.getMediaId());
-        boolean actionTaken = true;
         if (item.isPlayable()) {
             getMediaController().getTransportControls().playFromMediaId(item.getMediaId(), null);
             if (mProgressDialog != null) {
@@ -129,7 +127,6 @@ public class MusicPlayerActivity extends BaseActivity
         } else {
             LogHelper.w(TAG, "Ignoring MediaItem that is neither browsable nor playable: ",
                     "mediaId=", item.getMediaId());
-            actionTaken = false;
         }
     }
 

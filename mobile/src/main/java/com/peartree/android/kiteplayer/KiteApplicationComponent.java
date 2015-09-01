@@ -9,6 +9,7 @@ import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
 import com.peartree.android.kiteplayer.model.AlbumArtLoader;
 import com.peartree.android.kiteplayer.ui.ActionBarCastActivity;
 import com.peartree.android.kiteplayer.ui.AuthActivity;
+import com.peartree.android.kiteplayer.ui.MediaBrowserFragment;
 import com.peartree.android.kiteplayer.utils.ImmutableFileLRUCache;
 
 import javax.inject.Singleton;
@@ -24,6 +25,7 @@ public interface KiteApplicationComponent {
 
     void inject(AuthActivity activity);
     void inject(ActionBarCastActivity activity);
+    void inject(MediaBrowserFragment fragment);
 
     Application application();
     VideoCastManager videoCastManager();

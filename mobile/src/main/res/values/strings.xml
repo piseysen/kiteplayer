@@ -66,5 +66,5 @@
     <string name="pref_cellular_stream_key">pref_cellular_stream</string>
     <string name="pref_cellular_stream">Stream over cellular</string>
     <string name="pref_cellular_stream_summary">Recommended setting: OFF</string>
-    <string name="progress_queueing">Queuing songs...</string>
+    <string name="progress_queueing">Queueing songs...</string>
 </resources>
