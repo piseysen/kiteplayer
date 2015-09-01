@@ -74,7 +74,6 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
     private BrowseAdapter mBrowserAdapter;
     private String mMediaId;
     private MediaFragmentListener mMediaFragmentListener;
-    private ProgressBar mProgressBar;
     private View mErrorView;
     private TextView mErrorMessage;
     private SwipeRefreshLayout mSwipeLayout;
@@ -143,14 +142,15 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
                     LogHelper.e(TAG, "Error on childrenloaded", t);
                     mMediaFragmentListener.onMediaFinishedLoading(false);
                 } finally {
-                    mProgressBar.setVisibility(View.GONE);
+                    mSwipeLayout.setRefreshing(false);
                 }
             }
 
             @Override
             public void onError(@NonNull String id) {
                 LogHelper.e(TAG, "browse fragment subscription onError, id=" + id);
-                mProgressBar.setVisibility(View.GONE);
+
+                mSwipeLayout.setRefreshing(false);
 
                 Toast.makeText(getActivity(), R.string.error_loading_media, Toast.LENGTH_LONG).show();
                 checkForUserVisibleErrors(true);
@@ -176,9 +176,11 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
 
         View rootView = inflater.inflate(R.layout.fragment_list, container, false);
 
-        mProgressBar = (ProgressBar) rootView.findViewById(R.id.loading_progressbar);
         mSwipeLayout = (SwipeRefreshLayout) rootView;
+
         mSwipeLayout.setOnRefreshListener(this);
+        mSwipeLayout.setColorSchemeResources(R.color.app_accent);
+        mSwipeLayout.post(() -> mSwipeLayout.setRefreshing(true));
 
         mErrorView = rootView.findViewById(R.id.playback_error);
         mErrorMessage = (TextView) mErrorView.findViewById(R.id.error_message);
