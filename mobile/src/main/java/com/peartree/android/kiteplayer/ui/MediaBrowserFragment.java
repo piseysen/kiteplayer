@@ -42,9 +42,12 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.dropbox.client2.DropboxAPI;
+import com.dropbox.client2.android.AndroidAuthSession;
 import com.peartree.android.kiteplayer.KiteApplication;
 import com.peartree.android.kiteplayer.R;
 import com.peartree.android.kiteplayer.model.MusicProvider;
+import com.peartree.android.kiteplayer.utils.DropboxHelper;
 import com.peartree.android.kiteplayer.utils.LogHelper;
 import com.peartree.android.kiteplayer.utils.MediaIDHelper;
 import com.peartree.android.kiteplayer.utils.NetworkHelper;
@@ -65,7 +68,7 @@ import rx.schedulers.Schedulers;
  * Once connected, the fragment subscribes to get all the children.
  * All {@link MediaBrowser.MediaItem}'s that can be browsed are shown in a ListView.
  */
-public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener{
+public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
 
     private static final String TAG = LogHelper.makeLogTag(MediaBrowserFragment.class);
 
@@ -78,6 +81,8 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
     private TextView mErrorMessage;
     private SwipeRefreshLayout mSwipeLayout;
 
+    @Inject
+    DropboxAPI<AndroidAuthSession> mDBApi;
 
     @Inject
     MusicProvider mProvider;
@@ -132,15 +137,18 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
                                          @NonNull List<MediaBrowser.MediaItem> children) {
                 try {
                     LogHelper.d(TAG, "fragment onChildrenLoaded, parentId=" + parentId +
-                        "  count=" + children.size());
-                    checkForUserVisibleErrors(children.isEmpty());
-                    mBrowserAdapter.clear();
-                    mBrowserAdapter.addAll(children);
-                    mBrowserAdapter.notifyDataSetChanged();
-                    mMediaFragmentListener.onMediaFinishedLoading(true);
+                            "  count=" + children.size());
+
+                    if (children.isEmpty() && DropboxHelper.isUnlinked(mDBApi.getSession())) {
+                        mMediaFragmentListener.onDropboxSessionUnlinked();
+                    } else {
+                        checkForUserVisibleErrors(children.isEmpty());
+                        mBrowserAdapter.clear();
+                        mBrowserAdapter.addAll(children);
+                        mBrowserAdapter.notifyDataSetChanged();
+                    }
                 } catch (Throwable t) {
                     LogHelper.e(TAG, "Error on childrenloaded", t);
-                    mMediaFragmentListener.onMediaFinishedLoading(false);
                 } finally {
                     mSwipeLayout.setRefreshing(false);
                 }
@@ -154,8 +162,6 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
 
                 Toast.makeText(getActivity(), R.string.error_loading_media, Toast.LENGTH_LONG).show();
                 checkForUserVisibleErrors(true);
-
-                mMediaFragmentListener.onMediaFinishedLoading(false);
             }
         };
 
@@ -336,6 +342,10 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
                                 mSwipeLayout.setRefreshing(true);
                             }
                         }, error -> {
+                            if (NetworkHelper.isOnline(getActivity()) &&
+                                    DropboxHelper.isUnlinked(mDBApi.getSession())) {
+                                mMediaFragmentListener.onDropboxSessionUnlinked();
+                            }
                             mSwipeLayout.setRefreshing(false);
                         }, () -> {
                             mSwipeLayout.setRefreshing(false);
@@ -384,8 +394,8 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
 
     public interface MediaFragmentListener extends MediaBrowserProvider {
         void onMediaItemSelected(MediaBrowser.MediaItem item);
-        void onMediaFinishedLoading(boolean success);
         void setToolbarTitle(CharSequence title);
+        void onDropboxSessionUnlinked();
     }
 
 }

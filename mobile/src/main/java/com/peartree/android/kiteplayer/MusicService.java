@@ -328,8 +328,10 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
             mMusicProvider
                     .init()
                     .subscribeOn(Schedulers.io())
-                    .doOnCompleted(() -> loadChildrenImpl(parentMediaId, result))
-                    .subscribe();
+                    .subscribe(
+                            entryId -> {},
+                            error -> result.sendResult(Collections.EMPTY_LIST),
+                            () -> loadChildrenImpl(parentMediaId, result));
 
         } else {
             loadChildrenImpl(parentMediaId, result);
@@ -388,7 +390,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                 .subscribeOn(Schedulers.io())
                 .subscribe(
                         mediaItem -> mediaItems.add(mediaItem),
-                        error -> result.sendResult(Collections.emptyList()),
+                        error -> result.sendResult(Collections.EMPTY_LIST),
                         () -> {
                             LogHelper.d(TAG, "OnLoadChildren sending ", mediaItems.size(),
                                     " results for ", parentMediaId);

@@ -11,6 +11,7 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.exception.DropboxException;
+import com.dropbox.client2.exception.DropboxUnlinkedException;
 import com.peartree.android.kiteplayer.R;
 import com.peartree.android.kiteplayer.database.DropboxDBEntry;
 import com.peartree.android.kiteplayer.database.DropboxDBEntryDAO;
@@ -18,6 +19,7 @@ import com.peartree.android.kiteplayer.database.DropboxDBSong;
 import com.peartree.android.kiteplayer.database.DropboxDBSongDAO;
 import com.peartree.android.kiteplayer.model.AlbumArtLoader;
 import com.peartree.android.kiteplayer.model.MusicProvider;
+import com.peartree.android.kiteplayer.utils.DropboxHelper;
 import com.peartree.android.kiteplayer.utils.ImmutableFileLRUCache;
 import com.peartree.android.kiteplayer.utils.LogHelper;
 import com.peartree.android.kiteplayer.utils.NetworkHelper;
@@ -150,10 +152,12 @@ public class DropboxSyncService {
                         subscriber.onCompleted();
                         LogHelper.d(TAG, "synchronizeEntryDB - Finished successfully");
 
-                    } catch (DropboxException dbe) {
+                    } catch (DropboxException e) {
 
-                        subscriber.onError(dbe);
-                        LogHelper.e(TAG, "synchronizeEntryDB - Finished with error", dbe);
+                        DropboxHelper.unlinkSessionIfUnlinkedException(mDropboxApi.getSession(), e);
+
+                        subscriber.onError(e);
+                        LogHelper.e(TAG, "synchronizeEntryDB - Finished with error", e);
 
                     }
 
@@ -189,13 +193,7 @@ public class DropboxSyncService {
                     getCachedSongFile(entry) == null &&
                     NetworkHelper.canStream(mApplicationContext)) {
 
-                try {
-                    refreshDownloadURL(entry);
-                } catch (MalformedURLException | DropboxException e) {
-                    song.setDownloadURL(null);
-                    song.setDownloadURLExpiration(null);
-                    LogHelper.d(TAG, "fillSongMetadata - Unable to refresh download URL for: " + entry.getFullPath(), e);
-                }
+                refreshDownloadURL(entry);
 
             }
 
@@ -238,13 +236,7 @@ public class DropboxSyncService {
 
             LogHelper.d(TAG, "synchronizeSongDB - Song not cached. Attempting to refresh URL for entry: " + entry.getFullPath());
 
-            try {
-                refreshDownloadURL(entry);
-            } catch (MalformedURLException | DropboxException e) {
-                song.setDownloadURL(null);
-                song.setDownloadURLExpiration(null);
-                LogHelper.w(TAG, "synchronizeSongDB - Unable to refresh download URL for: " + entry.getFullPath(), e);
-            }
+            refreshDownloadURL(entry);
             updateSongInDB = true;
 
         }
@@ -340,7 +332,7 @@ public class DropboxSyncService {
 
     }
 
-    private void refreshDownloadURL(DropboxDBEntry entry) throws MalformedURLException, DropboxException {
+    private void refreshDownloadURL(DropboxDBEntry entry) {
 
         DropboxDBSong song = entry.getSong();
         DropboxAPI.DropboxLink link;
@@ -352,13 +344,26 @@ public class DropboxSyncService {
 
         if (!hasValidDownloadURL) {
 
-            link = mDropboxApi.media(entry.getFullPath(), false);
+            try {
 
-            LogHelper.d(TAG, "refreshDownloadURL - Generated new download URL for: " + entry.getFullPath());
+                link = mDropboxApi.media(entry.getFullPath(), false);
 
-            song.setDownloadURL(new URL(link.url));
-            song.setDownloadURLExpiration(link.expires);
+                LogHelper.d(TAG, "refreshDownloadURL - Generated new download URL for: " + entry.getFullPath());
 
+                song.setDownloadURL(new URL(link.url));
+                song.setDownloadURLExpiration(link.expires);
+
+            } catch (MalformedURLException | DropboxException e) {
+
+                if (e instanceof DropboxException) {
+                    DropboxHelper.unlinkSessionIfUnlinkedException(mDropboxApi.getSession(),
+                            (DropboxException) e);
+                }
+                song.setDownloadURL(null);
+                song.setDownloadURLExpiration(null);
+                LogHelper.d(TAG, "refreshDownloadURL - Unable to refresh download URL for: " + entry.getFullPath(), e);
+
+            }
         }
 
     }

@@ -91,7 +91,7 @@ public class MusicProvider {
     /**
      * Get the list of music tracks from a server and caches the track information
      */
-    public Observable<Boolean> init() {
+    public Observable<Long> init() {
 
         return mDBSyncService
                 .synchronizeEntryDB()
@@ -117,6 +117,7 @@ public class MusicProvider {
                     public void onNext(Long entryId) {
                         if (!s.isUnsubscribed()) {
                             mCurrentState = State.INITIALIZING;
+                            s.onNext(entryId);
                         }
                     }
                 });

@@ -15,6 +15,7 @@
  */
 package com.peartree.android.kiteplayer.ui;
 
+import android.app.ActivityOptions;
 import android.app.FragmentTransaction;
 import android.app.SearchManager;
 import android.content.Intent;
@@ -131,19 +132,17 @@ public class MusicPlayerActivity extends BaseActivity
     }
 
     @Override
-    public void onMediaFinishedLoading(boolean success) {
-        if (mProgressDialog != null && mProgressDialog.isShowing()) {
-            mProgressDialog.dismiss();
-        }
-    }
-
-    @Override
     public void setToolbarTitle(CharSequence title) {
         LogHelper.d(TAG, "Setting toolbar title to ", title);
         if (title == null) {
             title = getString(R.string.app_name);
         }
         setTitle(title);
+    }
+
+    @Override
+    public void onDropboxSessionUnlinked() {
+        reAuthenticate();
     }
 
     @Override

@@ -73,16 +73,10 @@ public class FullScreenPlayerActivity extends ActionBarCastActivity {
     private Drawable mPlayDrawable;
     private ImageView mBackgroundImage;
 
-    private String mCurrentArtUrl;
     private final Handler mHandler = new Handler();
     private MediaBrowser mMediaBrowser;
 
-    private final Runnable mUpdateProgressTask = new Runnable() {
-        @Override
-        public void run() {
-            updateProgress();
-        }
-    };
+    private final Runnable mUpdateProgressTask = FullScreenPlayerActivity.this::updateProgress;
 
     private final ScheduledExecutorService mExecutorService =
         Executors.newSingleThreadScheduledExecutor();
@@ -140,45 +134,36 @@ public class FullScreenPlayerActivity extends ActionBarCastActivity {
         mLoading = (ProgressBar) findViewById(R.id.progressBar1);
         mControllers = findViewById(R.id.controllers);
 
-        mSkipNext.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                MediaController.TransportControls controls =
-                    getMediaController().getTransportControls();
-                controls.skipToNext();
-            }
+        mSkipNext.setOnClickListener(v -> {
+            MediaController.TransportControls controls =
+                getMediaController().getTransportControls();
+            controls.skipToNext();
         });
 
-        mSkipPrev.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                MediaController.TransportControls controls =
-                    getMediaController().getTransportControls();
-                controls.skipToPrevious();
-            }
+        mSkipPrev.setOnClickListener(v -> {
+            MediaController.TransportControls controls =
+                getMediaController().getTransportControls();
+            controls.skipToPrevious();
         });
 
-        mPlayPause.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                PlaybackState state = getMediaController().getPlaybackState();
-                if (state != null) {
-                    MediaController.TransportControls controls =
-                            getMediaController().getTransportControls();
-                    switch (state.getState()) {
-                        case PlaybackState.STATE_PLAYING: // fall through
-                        case PlaybackState.STATE_BUFFERING:
-                            controls.pause();
-                            stopSeekbarUpdate();
-                            break;
-                        case PlaybackState.STATE_PAUSED:
-                        case PlaybackState.STATE_STOPPED:
-                            controls.play();
-                            scheduleSeekbarUpdate();
-                            break;
-                        default:
-                            LogHelper.d(TAG, "onClick with state ", state.getState());
-                    }
+        mPlayPause.setOnClickListener(v -> {
+            PlaybackState state = getMediaController().getPlaybackState();
+            if (state != null) {
+                MediaController.TransportControls controls =
+                        getMediaController().getTransportControls();
+                switch (state.getState()) {
+                    case PlaybackState.STATE_PLAYING: // fall through
+                    case PlaybackState.STATE_BUFFERING:
+                        controls.pause();
+                        stopSeekbarUpdate();
+                        break;
+                    case PlaybackState.STATE_PAUSED:
+                    case PlaybackState.STATE_STOPPED:
+                        controls.play();
+                        scheduleSeekbarUpdate();
+                        break;
+                    default:
+                        LogHelper.d(TAG, "onClick with state ", state.getState());
                 }
             }
         });
@@ -246,12 +231,7 @@ public class FullScreenPlayerActivity extends ActionBarCastActivity {
         stopSeekbarUpdate();
         if (!mExecutorService.isShutdown()) {
             mScheduleFuture = mExecutorService.scheduleAtFixedRate(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            mHandler.post(mUpdateProgressTask);
-                        }
-                    }, PROGRESS_UPDATE_INITIAL_INTERVAL,
+                    () -> mHandler.post(mUpdateProgressTask), PROGRESS_UPDATE_INITIAL_INTERVAL,
                     PROGRESS_UPDATE_INTERNAL, TimeUnit.MILLISECONDS);
         }
     }

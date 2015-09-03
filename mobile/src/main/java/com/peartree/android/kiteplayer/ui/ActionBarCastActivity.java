@@ -31,7 +31,6 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
@@ -45,13 +44,14 @@ import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
 import com.google.android.libraries.cast.companionlibrary.cast.callbacks.VideoCastConsumerImpl;
 import com.peartree.android.kiteplayer.KiteApplication;
 import com.peartree.android.kiteplayer.R;
+import com.peartree.android.kiteplayer.utils.DropboxHelper;
 import com.peartree.android.kiteplayer.utils.LogHelper;
+import com.peartree.android.kiteplayer.utils.NetworkHelper;
 import com.peartree.android.kiteplayer.utils.PrefUtils;
 import com.peartree.android.kiteplayer.utils.ResourceHelper;
 
 import javax.inject.Inject;
 
-import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 import rx.util.async.Async;
@@ -156,12 +156,7 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
     };
 
     private final FragmentManager.OnBackStackChangedListener mBackStackChangedListener =
-            new FragmentManager.OnBackStackChangedListener() {
-                @Override
-                public void onBackStackChanged() {
-                    updateDrawerToggle();
-                }
-            };
+            ActionBarCastActivity.this::updateDrawerToggle;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -170,6 +165,11 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
 
         // Dependency Injection
         ((KiteApplication)getApplication()).getComponent().inject(this);
+
+        if (NetworkHelper.isOnline(this) &&
+                DropboxHelper.isUnlinked(mDBApi.getSession())) {
+            reAuthenticate();
+        }
 
         // Ensure that Google Play Service is available.
         VideoCastManager.checkGooglePlayServices(this);
@@ -303,6 +303,7 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
                         try {
                             return mDBApi.accountInfo();
                         } catch (DropboxException e) {
+                            DropboxHelper.unlinkSessionIfUnlinkedException(mDBApi.getSession(), e);
                             throw new RuntimeException(e);
                         }
                     })
@@ -317,7 +318,12 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
                             ((TextView) findViewById(R.id.drawer_user_name)).setText(dbAccount.displayName);
                             ((TextView) findViewById(R.id.drawer_user_email)).setText(dbAccount.email);
                         }
-                    }, error -> LogHelper.e(TAG, "initializeToolbar - Unable to obtain user data for drawer header.", error));
+                    }, error -> {
+                        if (DropboxHelper.isUnlinked(mDBApi.getSession())) {
+                            reAuthenticate();
+                        }
+                        LogHelper.e(TAG, "initializeToolbar - Unable to obtain user data for drawer header.", error);
+                    });
 
             populateDrawerItems();
             setSupportActionBar(mToolbar);
@@ -339,15 +345,12 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
                 new String[]{DrawerMenuContents.FIELD_TITLE, DrawerMenuContents.FIELD_ICON},
                 new int[]{R.id.drawer_item_title, R.id.drawer_item_icon});
 
-        mDrawerList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                if (position != selectedPosition) {
-                    mItemToOpenWhenDrawerCloses = position;
-                }
-                mDrawerList.setItemChecked(position,true);
-                mDrawerLayout.closeDrawers();
+        mDrawerList.setOnItemClickListener((parent, view, position, id) -> {
+            if (position != selectedPosition) {
+                mItemToOpenWhenDrawerCloses = position;
             }
+            mDrawerList.setItemChecked(position,true);
+            mDrawerLayout.closeDrawers();
         });
         mDrawerList.setAdapter(adapter);
         mDrawerList.post(() -> mDrawerList.setItemChecked(selectedPosition,true));
@@ -383,5 +386,14 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
                     .hideOnTouchOutside()
                     .build();
         }
+    }
+
+    protected void reAuthenticate() {
+        Intent i = new Intent(this,AuthActivity.class);
+        Bundle extras = ActivityOptions
+                .makeCustomAnimation(this,R.anim.fade_in,R.anim.fade_out)
+                .toBundle();
+        startActivity(i,extras);
+        finish();
     }
 }

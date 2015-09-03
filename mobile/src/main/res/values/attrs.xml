@@ -15,9 +15,11 @@
   limitations under the License.
   -->
 <resources>
+
     <declare-styleable name="ScrimInsetsView">
         <attr name="insetForeground" format="reference|color" />
     </declare-styleable>
+
 
     <!-- Material Text Appearance:
         http://www.google.com/design/spec/style/typography.html#typography-styles -->
