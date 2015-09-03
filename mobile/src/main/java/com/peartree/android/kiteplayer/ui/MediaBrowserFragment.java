@@ -346,6 +346,7 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
                                     DropboxHelper.isUnlinked(mDBApi.getSession())) {
                                 mMediaFragmentListener.onDropboxSessionUnlinked();
                             }
+                            checkForUserVisibleErrors(true);
                             mSwipeLayout.setRefreshing(false);
                         }, () -> {
                             mSwipeLayout.setRefreshing(false);
