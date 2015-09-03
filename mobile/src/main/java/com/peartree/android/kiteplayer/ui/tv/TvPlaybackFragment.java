@@ -89,7 +89,7 @@ public class TvPlaybackFragment extends android.support.v17.leanback.app.Playbac
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        LogHelper.i(TAG, "onCreate");
+        LogHelper.d(TAG, "onCreate");
 
         mBackgroundManager = BackgroundManager.getInstance(getActivity());
         mBackgroundManager.attach(getActivity().getWindow());

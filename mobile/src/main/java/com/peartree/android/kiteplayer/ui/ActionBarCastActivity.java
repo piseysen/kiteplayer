@@ -322,7 +322,7 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
                         if (DropboxHelper.isUnlinked(mDBApi.getSession())) {
                             reAuthenticate();
                         }
-                        LogHelper.e(TAG, "initializeToolbar - Unable to obtain user data for drawer header.", error);
+                        LogHelper.e(TAG, error, "initializeToolbar - Unable to obtain user data for drawer header.");
                     });
 
             populateDrawerItems();

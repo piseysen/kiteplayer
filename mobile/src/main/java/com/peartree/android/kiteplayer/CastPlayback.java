@@ -125,7 +125,7 @@ public class CastPlayback implements Playback {
             }
         } catch (TransientNetworkDisconnectionException | NoConnectionException
                 | JSONException | IllegalArgumentException e) {
-            LogHelper.e(TAG, "Exception loading media ", e, null);
+            LogHelper.e(TAG, e, "Exception loading media");
             if (mCallback != null) {
                 mCallback.onError(e.getMessage());
             }

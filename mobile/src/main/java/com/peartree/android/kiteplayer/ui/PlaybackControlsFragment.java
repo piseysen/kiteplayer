@@ -217,10 +217,10 @@ public class PlaybackControlsFragment extends Fragment {
             PlaybackState stateObj = getActivity().getMediaController().getPlaybackState();
             final int state = stateObj == null ?
                     PlaybackState.STATE_NONE : stateObj.getState();
-            LogHelper.d(TAG, "Button pressed, in state " + state);
+            LogHelper.d(TAG, "Button pressed, in state ", state);
             switch (v.getId()) {
                 case R.id.play_pause:
-                    LogHelper.d(TAG, "Play button pressed, in state " + state);
+                    LogHelper.d(TAG, "Play button pressed, in state ", state);
                     if (state == PlaybackState.STATE_PAUSED ||
                             state == PlaybackState.STATE_STOPPED ||
                             state == PlaybackState.STATE_NONE) {

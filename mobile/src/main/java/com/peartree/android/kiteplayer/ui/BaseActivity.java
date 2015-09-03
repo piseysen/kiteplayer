@@ -147,7 +147,7 @@ public abstract class BaseActivity extends ActionBarCastActivity implements Medi
         if (shouldShowControls()) {
             showPlaybackControls();
         } else {
-            LogHelper.d(TAG, "connectionCallback.onConnected: " +
+            LogHelper.d(TAG, "connectionCallback.onConnected: ",
                 "hiding controls because metadata is null");
             hidePlaybackControls();
         }
@@ -167,7 +167,7 @@ public abstract class BaseActivity extends ActionBarCastActivity implements Medi
                 if (shouldShowControls()) {
                     showPlaybackControls();
                 } else {
-                    LogHelper.d(TAG, "mediaControllerCallback.onPlaybackStateChanged: " +
+                    LogHelper.d(TAG, "mediaControllerCallback.onPlaybackStateChanged: ",
                             "hiding controls because state is ", state.getState());
                     hidePlaybackControls();
                 }
@@ -178,7 +178,7 @@ public abstract class BaseActivity extends ActionBarCastActivity implements Medi
                 if (shouldShowControls()) {
                     showPlaybackControls();
                 } else {
-                    LogHelper.d(TAG, "mediaControllerCallback.onMetadataChanged: " +
+                    LogHelper.d(TAG, "mediaControllerCallback.onMetadataChanged: ",
                         "hiding controls because metadata is null");
                     hidePlaybackControls();
                 }

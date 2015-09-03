@@ -46,7 +46,10 @@ public class AlbumArtLoader implements StreamModelLoader<MediaMetadata> {
             public InputStream loadData(Priority priority) throws Exception {
                 final ByteArrayOutputStream os = new ByteArrayOutputStream();
 
-                LogHelper.d(TAG, "getResourceFetcher - Subscribing to Dropbox.getAlbumArt() for: " + mm.getString(MediaMetadata.METADATA_KEY_ALBUM) + " (" + width + "x" + height + ")");
+                LogHelper.d(TAG,
+                        "getResourceFetcher - Starting async data load for album=",
+                        mm.getString(MediaMetadata.METADATA_KEY_ALBUM),
+                        " with dimensions (", width, "x", height, ")");
 
                 mSyncService
                         .getAlbumArt(mm)
@@ -56,14 +59,21 @@ public class AlbumArtLoader implements StreamModelLoader<MediaMetadata> {
                                 os.write(byteArray);
                             } catch (IOException e) {
                                 // do nothing, output stream will be empty;
-                                LogHelper.w(TAG, "getResourceFetcher - Exception while reading image byte array for " + mm.toString(), e);
+                                LogHelper.w(TAG, e,
+                                        "getResourceFetcher - Exception while reading",
+                                        " image byte array for album=",
+                                        mm.getString(MediaMetadata.METADATA_KEY_ALBUM));
                             }
                         }, error -> {
-                            LogHelper.w(TAG, "getResourceFetcher - Finished with error", error);
+                            LogHelper.w(TAG, error, "getResourceFetcher - Finished with error");
                             os.reset();
                         });
 
-                LogHelper.d(TAG, "getResourceFetcher - Finished subscribing to Dropbox.getAlbumArt() for: " + mm.getString(MediaMetadata.METADATA_KEY_ALBUM) + " (" + width + "x" + height + "). Total bytes returned: " + os.size());
+                LogHelper.d(TAG,
+                        "getResourceFetcher - Finished async data load for album=",
+                        mm.getString(MediaMetadata.METADATA_KEY_ALBUM),
+                        " with dimensions (", width, "x", height, "). Total bytes returned: ",
+                        os.size());
 
                 return new ByteArrayInputStream(os.toByteArray());
             }

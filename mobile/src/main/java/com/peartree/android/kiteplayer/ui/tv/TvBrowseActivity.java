@@ -87,7 +87,7 @@ public class TvBrowseActivity extends Activity
 
 
     protected void navigateToBrowser(String mediaId) {
-        LogHelper.d(TAG, "navigateToBrowser, mediaId=" + mediaId);
+        LogHelper.d(TAG, "navigateToBrowser, mediaId=", mediaId);
         TvBrowseFragment fragment =
                 (TvBrowseFragment) getFragmentManager().findFragmentById(R.id.main_browse_fragment);
         fragment.initializeWithMediaId(mediaId);

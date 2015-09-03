@@ -136,8 +136,8 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
             public void onChildrenLoaded(@NonNull String parentId,
                                          @NonNull List<MediaBrowser.MediaItem> children) {
                 try {
-                    LogHelper.d(TAG, "fragment onChildrenLoaded, parentId=" + parentId +
-                            "  count=" + children.size());
+                    LogHelper.d(TAG, "fragment onChildrenLoaded, parentId=", parentId,
+                            "  count=", children.size());
 
                     if (children.isEmpty() && DropboxHelper.isUnlinked(mDBApi.getSession())) {
                         mMediaFragmentListener.onDropboxSessionUnlinked();
@@ -148,7 +148,7 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
                         mBrowserAdapter.notifyDataSetChanged();
                     }
                 } catch (Throwable t) {
-                    LogHelper.e(TAG, "Error on childrenloaded", t);
+                    LogHelper.e(TAG, t, "Error on childrenloaded");
                 } finally {
                     mSwipeLayout.setRefreshing(false);
                 }
@@ -156,7 +156,7 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
 
             @Override
             public void onError(@NonNull String id) {
-                LogHelper.e(TAG, "browse fragment subscription onError, id=" + id);
+                LogHelper.e(TAG, "browse fragment subscription onError, id=", id);
 
                 mSwipeLayout.setRefreshing(false);
 

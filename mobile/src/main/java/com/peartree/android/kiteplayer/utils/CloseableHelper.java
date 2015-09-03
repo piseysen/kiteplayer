@@ -11,7 +11,8 @@ public class CloseableHelper {
             try {
                 c.close();
             } catch (Exception e) {
-                LogHelper.w(TAG,"closeQuietly - Failed closing "+c.toString(),e);
+                LogHelper.w(TAG, e,
+                        "closeQuietly - Failed closing ", c);
             }
         }
     }

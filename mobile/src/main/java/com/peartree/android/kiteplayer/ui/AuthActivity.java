@@ -103,7 +103,7 @@ public class AuthActivity extends AppCompatActivity {
                 launchPlayer();
 
             } catch (IllegalStateException e) {
-                LogHelper.i("DbAuthLog", "Error authenticating", e);
+                LogHelper.i("DbAuthLog", e, "Error authenticating");
             }
         } else {
             mAuthProgress.setVisibility(View.GONE);

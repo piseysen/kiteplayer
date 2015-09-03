@@ -165,7 +165,7 @@ public class MediaNotificationManager extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         final String action = intent.getAction();
-        LogHelper.d(TAG, "Received intent with action " + action);
+        LogHelper.d(TAG, "Received intent with action ", action);
         switch (action) {
             case ACTION_PAUSE:
                 mTransportControls.pause();
@@ -264,7 +264,7 @@ public class MediaNotificationManager extends BroadcastReceiver {
     private Observable<Notification> createNotification() {
 
         return Observable.create(subscriber -> {
-            LogHelper.d(TAG, "updateNotificationMetadata. mMetadata=" + mMetadata);
+            LogHelper.d(TAG, "updateNotificationMetadata. mMetadata=", mMetadata);
             if (mMetadata == null || mPlaybackState == null) {
                 subscriber.onNext(null);
                 subscriber.onCompleted();
@@ -310,7 +310,7 @@ public class MediaNotificationManager extends BroadcastReceiver {
                         .get();
 
             } catch (InterruptedException | ExecutionException e) {
-                LogHelper.w(TAG, "Unable to load notification icon.", e);
+                LogHelper.w(TAG, e, "Unable to load notification icon.");
             }
 
 
@@ -364,7 +364,7 @@ public class MediaNotificationManager extends BroadcastReceiver {
     }
 
     private void setNotificationPlaybackState(Notification.Builder builder) {
-        LogHelper.d(TAG, "updateNotificationPlaybackState. mPlaybackState=" + mPlaybackState);
+        LogHelper.d(TAG, "updateNotificationPlaybackState. mPlaybackState=", mPlaybackState);
         if (mPlaybackState == null || !mStarted) {
             LogHelper.d(TAG, "updateNotificationPlaybackState. cancelling notification!");
             mService.stopForeground(true);

@@ -64,7 +64,7 @@ public class TvVerticalGridActivity extends Activity
     }
 
     protected void browse() {
-        LogHelper.d(TAG, "navigateToBrowser, mediaId=" + mMediaId);
+        LogHelper.d(TAG, "navigateToBrowser, mediaId=", mMediaId);
         TvVerticalGridFragment fragment = (TvVerticalGridFragment) getFragmentManager()
                 .findFragmentById(R.id.vertical_grid_fragment);
         fragment.setMediaId(mMediaId);

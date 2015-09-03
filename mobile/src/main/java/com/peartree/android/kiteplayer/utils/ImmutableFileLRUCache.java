@@ -58,14 +58,17 @@ public class ImmutableFileLRUCache {
 
         Lock writerLock;
         if (mWriters.get(filename) != null) { // Another active writer must not exist
-            LogHelper.w(TAG, "newFile - Another writer already exists for: " + filename + ". Returning null.");
+            LogHelper.w(TAG,
+                    "newFile - Another writer already exists for: ", filename, ". Returning null.");
             return null;
         } else {
             mWriters.put(filename, new ReentrantLock());
             if ((writerLock = mWriters.get(filename)) != null) {
                 writerLock.lock();
             } else {
-                LogHelper.e(TAG, "newFile - Unable to find active writer's lock for: " + filename + ". Should never happen.");
+                LogHelper.e(TAG,
+                        "newFile - Unable to find active writer's lock for: ", filename,
+                        ". Should never happen.");
                 return null; // Should never happen
             }
         }
@@ -77,7 +80,7 @@ public class ImmutableFileLRUCache {
         try {
 
             if (newFile.exists()) { // File must not be overwritten
-                LogHelper.w(TAG, "newFile - Already exists: " + filename);
+                LogHelper.w(TAG, "newFile - Already exists: ", filename);
                 return null;
             } else {
 
@@ -96,7 +99,7 @@ public class ImmutableFileLRUCache {
             return newFile;
 
         } catch (Exception e) {
-            LogHelper.w(TAG, "newFile - Unable to create cache file: " + filename, e);
+            LogHelper.w(TAG, e, "newFile - Unable to create cache file: ", filename);
 
             if (tmpFile != null) tmpFile.delete();
             if (newFile != null) newFile.delete();

@@ -179,7 +179,7 @@ public class TvBrowseFragment extends BrowseFragment {
 
                 @Override
                 public void onError(@NonNull String id) {
-                    LogHelper.e(TAG, "SubscriptionCallback subscription onError, id=" + id);
+                    LogHelper.e(TAG, "SubscriptionCallback subscription onError, id=", id);
                 }
             };
 
@@ -237,7 +237,7 @@ public class TvBrowseFragment extends BrowseFragment {
                 if (o instanceof MediaItem) {
                     MediaItem item = (MediaItem) o;
                     if (item.isPlayable()) {
-                        LogHelper.w(TAG, "Ignoring click on PLAYABLE MediaItem in" +
+                        LogHelper.w(TAG, "Ignoring click on PLAYABLE MediaItem in",
                                 "TvBrowseFragment. mediaId=", item.getMediaId());
                         return;
                     }
@@ -274,8 +274,8 @@ public class TvBrowseFragment extends BrowseFragment {
         try {
             mMediaFragmentListener = (MediaFragmentListener) activity;
         } catch (ClassCastException ex) {
-            LogHelper.e(TAG, "TVBrowseFragment can only be attached to an activity that " +
-                    "implements MediaFragmentListener", ex);
+            LogHelper.e(TAG, ex, "TVBrowseFragment can only be attached to an activity that ",
+                    "implements MediaFragmentListener");
         }
     }
 
