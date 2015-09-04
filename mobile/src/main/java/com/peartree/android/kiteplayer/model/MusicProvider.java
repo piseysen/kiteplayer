@@ -84,6 +84,11 @@ public class MusicProvider {
         this.mDBSyncService = syncService;
     }
 
+    public void deleteAll() {
+        mEntryDao.deleteAll();
+        mCurrentState = State.NON_INITIALIZED;
+    }
+
     enum State {
         NON_INITIALIZED, INITIALIZING, INITIALIZED
     }

@@ -11,13 +11,19 @@ import android.widget.ProgressBar;
 
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
+import com.dropbox.client2.exception.DropboxException;
 import com.peartree.android.kiteplayer.KiteApplication;
 import com.peartree.android.kiteplayer.R;
+import com.peartree.android.kiteplayer.model.MusicProvider;
 import com.peartree.android.kiteplayer.utils.DropboxHelper;
 import com.peartree.android.kiteplayer.utils.LogHelper;
 import com.peartree.android.kiteplayer.utils.PrefUtils;
 
 import javax.inject.Inject;
+
+import rx.Observable;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 public class AuthActivity extends AppCompatActivity {
 
@@ -25,6 +31,9 @@ public class AuthActivity extends AppCompatActivity {
 
     @Inject
     DropboxAPI<AndroidAuthSession> mDBApi;
+
+    @Inject
+    MusicProvider mMusicProvider;
 
     private View mAuthMessage;
     private Button mAuthButton;
@@ -93,18 +102,39 @@ public class AuthActivity extends AppCompatActivity {
 
         if (mDBApi.getSession().authenticationSuccessful()) {
 
-            try {
-                // Required to complete auth, sets the access token on the session
-                mDBApi.getSession().finishAuthentication();
+            mDBApi.getSession().finishAuthentication();
 
-                String accessToken = mDBApi.getSession().getOAuth2AccessToken();
-                PrefUtils.setDropboxAuthToken(this,accessToken);
+            Observable
+                    .create(subscriber -> {
+                        try {
+                            // Required to complete auth, sets the access token on the session
 
-                launchPlayer();
+                            long lastUserID = PrefUtils.getDropboxUserId(this);
+                            long newUserID = mDBApi.accountInfo().uid;
 
-            } catch (IllegalStateException e) {
-                LogHelper.i("DbAuthLog", e, "Error authenticating");
-            }
+                            if (newUserID != lastUserID) {
+                                mMusicProvider.deleteAll();
+                                PrefUtils.setDropboxDeltaCursor(this, null);
+                            }
+
+                            PrefUtils.setDropboxUserId(this, newUserID);
+
+                            String accessToken = mDBApi.getSession().getOAuth2AccessToken();
+                            PrefUtils.setDropboxAuthToken(this, accessToken);
+
+                            subscriber.onCompleted();
+
+                        } catch (DropboxException | IllegalStateException e) {
+                            subscriber.onError(e);
+                        }
+                    })
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(
+                            nothing -> {},
+                            error -> LogHelper.i("DbAuthLog", error, "Error authenticating"),
+                            AuthActivity.this::launchPlayer);
+
         } else {
             mAuthProgress.setVisibility(View.GONE);
             mAuthMessage.setVisibility(View.VISIBLE);

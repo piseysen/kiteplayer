@@ -151,4 +151,15 @@ public class DropboxDBEntryDAO {
 
         return deleted;
     }
+
+    public int deleteAll() {
+
+        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+
+        int deleted = db.delete(Entry.TABLE_NAME,null,null);
+
+        LogHelper.d(TAG,"Deleted all ", deleted, " entries.");
+
+        return deleted;
+    }
 }

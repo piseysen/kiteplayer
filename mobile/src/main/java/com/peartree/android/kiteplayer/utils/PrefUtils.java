@@ -30,6 +30,7 @@ public class PrefUtils {
     private static final String FTU_SHOWN = "ftu_shown";
     private static final String DROPBOX_AUTH_TOKEN = "db_token";
     private static final String DROPBOX_DELTA_CURSOR = "db_delta_cursor";
+    private static final String DROPBOX_UID = "db_uid";
 
     public static SharedPreferences getPreferences(Context context) {
         return context.getSharedPreferences(PREF_NAMESPACE, Context.MODE_PRIVATE);
@@ -57,6 +58,14 @@ public class PrefUtils {
 
     public static String getDropboxDeltaCursor(Context context) {
         return getPreferences(context).getString(DROPBOX_DELTA_CURSOR, null);
+    }
+
+    public static void setDropboxUserId(Context context, long uid) {
+        getPreferences(context).edit().putLong(DROPBOX_UID, uid).apply();
+    }
+
+    public static long getDropboxUserId(Context context) {
+        return getPreferences(context).getLong(DROPBOX_UID, -1);
     }
 
     // From settings activity
