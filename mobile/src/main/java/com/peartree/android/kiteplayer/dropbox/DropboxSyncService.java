@@ -334,7 +334,7 @@ public class DropboxSyncService {
                     Glide
                             .with(mApplicationContext)
                             .load(retriever.getEmbeddedPicture())
-                            .fallback(R.drawable.ic_default_art)
+                            .fallback(R.drawable.ic_album_art)
                             .signature(new AlbumArtLoader.Key(MusicProvider.buildMetadataFromDBEntry(entry, cachedSongFile, false)))
                             .diskCacheStrategy(DiskCacheStrategy.ALL)
                             .into(LARGE_ALBUM_ART_DIMENSIONS[0], LARGE_ALBUM_ART_DIMENSIONS[1])

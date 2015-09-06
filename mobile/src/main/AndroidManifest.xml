@@ -35,7 +35,7 @@
     <application
         android:name=".KiteApplication"
         android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/Theme.KiteApp"
         android:banner="@drawable/banner_tv">
@@ -78,7 +78,7 @@
         the current environment -->
         <activity
             android:name="com.peartree.android.kiteplayer.ui.NowPlayingActivity"
-            android:icon="@drawable/ic_launcher">
+            android:icon="@mipmap/ic_launcher">
         </activity>
 
         <!-- Main activity for Android TV user interface -->

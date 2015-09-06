@@ -275,7 +275,7 @@ public class FullScreenPlayerActivity extends ActionBarCastActivity {
         Glide
                 .with(this)
                 .load(mm)
-                .error(R.drawable.ic_default_art)
+                .error(R.drawable.album_art)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .into(mBackgroundImage);
     }

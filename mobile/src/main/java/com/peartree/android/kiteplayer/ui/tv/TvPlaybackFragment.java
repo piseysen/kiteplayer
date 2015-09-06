@@ -286,7 +286,7 @@ public class TvPlaybackFragment extends android.support.v17.leanback.app.Playbac
         Glide
                 .with(this)
                 .load(metadata)
-                .error(R.drawable.ic_default_art)
+                .error(R.drawable.ic_album_art)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .into(new SimpleTarget<GlideDrawable>(LARGE_ALBUM_ART_DIMENSIONS[0], LARGE_ALBUM_ART_DIMENSIONS[1]) {
 

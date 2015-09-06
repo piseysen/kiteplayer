@@ -155,7 +155,7 @@ public class PlaybackControlsFragment extends Fragment {
         Glide
                 .with(this)
                 .load(metadata)
-                .error(R.drawable.ic_default_art)
+                .error(R.drawable.ic_album_art)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .into(mAlbumArt);
     }

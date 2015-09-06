@@ -699,7 +699,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                                     .with(this)
                                     .load(track)
                                     .asBitmap()
-                                    .error(R.drawable.ic_default_art)
+                                    .error(R.drawable.ic_album_art)
                                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                                     .into(LARGE_ALBUM_ART_DIMENSIONS[0], LARGE_ALBUM_ART_DIMENSIONS[1])
                                     .get();
@@ -708,7 +708,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                                     .with(this)
                                     .load(track)
                                     .asBitmap()
-                                    .error(R.drawable.ic_default_art)
+                                    .error(R.drawable.ic_album_art)
                                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                                     .into(SMALL_ALBUM_ART_DIMENSIONS[0], SMALL_ALBUM_ART_DIMENSIONS[1])
                                     .get();

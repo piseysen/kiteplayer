@@ -25,7 +25,7 @@
     android:fitsSystemWindows="true"
     android:clickable="true"
     android:background="@android:color/white"
-    custom:insetForeground="#4000">
+    custom:legacyInsetForeground="#4000">
 
     <LinearLayout
         android:id="@+id/drawer_header"
@@ -36,7 +36,7 @@
         android:paddingEnd="?android:attr/listPreferredItemPaddingEnd"
         android:paddingBottom="?android:attr/dividerPadding"
         android:paddingTop="40dp"
-        android:background="@color/drawer_header_background">
+        android:background="@drawable/drawer_background">
 
 
         <TextView
@@ -70,7 +70,7 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:textColor="?android:attr/textColorPrimaryInverse"
+            android:textColor="?android:attr/textColorSecondaryInverse"
             android:textAppearance="?attr/textAppearanceBody1"
             android:singleLine="true"
             android:ellipsize="end"
@@ -84,5 +84,7 @@
         android:layout_height="match_parent"
         android:choiceMode="singleChoice"
         android:drawSelectorOnTop="true"
-        android:listSelector="?android:selectableItemBackground"/>
+        android:listSelector="?android:selectableItemBackground"
+        android:divider="@null"
+        android:dividerHeight="0dp"/>
 </com.peartree.android.kiteplayer.ui.ScrimInsetsRelativeLayout>

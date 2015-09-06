@@ -48,14 +48,6 @@ public abstract class BaseActivity extends ActionBarCastActivity implements Medi
 
         LogHelper.d(TAG, "Activity onCreate");
 
-        // Since our app icon has the same color as colorPrimary, our entry in the Recent Apps
-        // list gets weird. We need to change either the icon or the color of the TaskDescription.
-        ActivityManager.TaskDescription taskDesc = new ActivityManager.TaskDescription(
-            getTitle().toString(),
-            BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher_white),
-            ResourceHelper.getThemeColor(this, R.attr.colorPrimary, android.R.color.darker_gray));
-        setTaskDescription(taskDesc);
-
         // Connect a media browser just to get the media session token. There are other ways
         // this can be done, for example by sharing the session token directly.
         mMediaBrowser = new MediaBrowser(this,

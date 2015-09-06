@@ -304,7 +304,7 @@ public class MediaNotificationManager extends BroadcastReceiver {
                         .with(mService)
                         .load(mMetadata)
                         .asBitmap()
-                        .error(R.drawable.ic_default_art)
+                        .error(R.drawable.ic_album_art)
                         .diskCacheStrategy(DiskCacheStrategy.ALL)
                         .into(LARGE_ALBUM_ART_DIMENSIONS[0], LARGE_ALBUM_ART_DIMENSIONS[1])
                         .get();

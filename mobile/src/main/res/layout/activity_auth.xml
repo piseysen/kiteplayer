@@ -3,6 +3,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent" android:background="?colorPrimary">
 
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/welcome_background"
+        android:scaleType="centerCrop"/>
+
     <LinearLayout
         android:id="@+id/auth_message_layout"
         android:layout_width="match_parent"
@@ -13,7 +19,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Welcome"
+            android:text="@string/welcom_title"
             android:textAppearance="?attr/textAppearanceDisplay2"
             android:textColor="?android:attr/textColorPrimaryInverse"
             android:gravity="center"/>
@@ -21,17 +27,18 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="To get started, sign in using your Dropbox account."
+            android:text="@string/welcome_message"
             android:textAppearance="?attr/textAppearanceBody1"
-            android:textColor="?android:attr/textColorPrimaryInverse"
+            android:textColor="?android:attr/textColorSecondaryInverse"
             android:gravity="center"/>
 
         <Button
             android:id="@+id/auth_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Sign in with Dropbox"
-            android:layout_gravity="center"/>
+            android:layout_marginTop="24dp"
+            android:text="@string/welcome_button"
+            android:layout_gravity="center" />
 
     </LinearLayout>
 

@@ -17,9 +17,8 @@
 <resources>
 
     <declare-styleable name="ScrimInsetsView">
-        <attr name="insetForeground" format="reference|color" />
+        <attr name="legacyInsetForeground" format="reference|color" />
     </declare-styleable>
-
 
     <!-- Material Text Appearance:
         http://www.google.com/design/spec/style/typography.html#typography-styles -->

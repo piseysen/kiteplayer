@@ -68,7 +68,10 @@
     <string name="pref_cellular_stream_summary">Recommended setting: OFF</string>
     <string name="progress_queueing">Queueing songs...</string>
     <string name="unlinked_session_title">Dropbox Authentication</string>
-    <string name="unlinked_session_message">Your Dropbox authentication is no longer valid. Please sign in again.</string>
+    <string name="unlinked_session_message">Your Dropbox authentication is no longer valid. \nPlease sign in again.</string>
     <string name="unlinked_session_positive">Sign in with Dropbox</string>
     <string name="unlinked_session_negative">Cancel</string>
+    <string name="welcome_message">To get started, sign in using \nyour Dropbox account.</string>
+    <string name="welcom_title">Welcome</string>
+    <string name="welcome_button">Sign in with Dropbox</string>
 </resources>
