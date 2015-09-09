@@ -53,19 +53,7 @@
     <string name="no_search_results">No search results.</string>
     <string name="loading">Loading…</string>
     <string name="media_route_menu_title">Play on…</string>
-    <string name="settings">Settings</string>
-    <string name="preference_group_network_data"><![CDATA[Network & Storage]]></string>
-    <string name="pref_cellular_sync">Sync Over Cellular</string>
-    <string name="pref_cellular_sync_summary">Recommended setting: OFF</string>
-    <string name="pref_cellular_sync_key">pref_cellular_sync</string>
-    <string name="pref_cache_size_title">Cache Size Limit</string>
-    <string name="pref_cache_size_summary">Maximum amount of device storage used to keep most listened to songs</string>
-    <string name="pref_cache_size_dialog_msg">Maximum amount of device storage (in megabytes) used to keep most listened to songs for faster and offline access</string>
-    <string name="pref_cache_size_key">pref_cache_size</string>
-    <string name="pref_cache_size_default">200</string>
-    <string name="pref_cellular_stream_key">pref_cellular_stream</string>
-    <string name="pref_cellular_stream">Stream over cellular</string>
-    <string name="pref_cellular_stream_summary">Recommended setting: OFF</string>
+
     <string name="progress_queueing">Queueing songs...</string>
     <string name="unlinked_session_title">Dropbox Authentication</string>
     <string name="unlinked_session_message">Your Dropbox authentication is no longer valid. \nPlease sign in again.</string>
@@ -74,4 +62,19 @@
     <string name="welcome_message">To get started, sign in using \nyour Dropbox account.</string>
     <string name="welcom_title">Welcome</string>
     <string name="welcome_button">Sign in with Dropbox</string>
+
+    <!-- Preferences -->
+    <string name="settings">Settings</string>
+    <string name="preference_group_network_data"><![CDATA[Network & Data]]></string>
+    <string name="preference_group_storage"><![CDATA[Disk & Storage]]></string>
+    <string name="pref_cellular_sync">Sync Over Cellular</string>
+    <string name="pref_cellular_sync_summary">When enabled, this will allow the app to download supplementary data over the cellular network (e.g. whole songs) in order to ensure that song information is completely in sync when not connected to a wifi network. \nRecommended setting: OFF</string>
+    <string name="pref_cellular_sync_key">pref_cellular_sync</string>
+    <string name="pref_cache_size_title">Cache Size Limit</string>
+    <string name="pref_cache_size_summary">Maximum amount of device storage (in megabytes) used to keep most listened to songs for faster playback and offline access\nRecommended setting: 500Mb</string>
+    <string name="pref_cache_size_key">pref_cache_size</string>
+    <string name="pref_cache_size_default">200</string>
+    <string name="pref_cellular_stream_key">pref_cellular_stream</string>
+    <string name="pref_cellular_stream">Stream Over Cellular</string>
+    <string name="pref_cellular_stream_summary">When enabled, this will allow the app to download songs over the cellular network for playing when not connected to a wifi network. \nRecommended setting: OFF</string>
 </resources>
