@@ -31,6 +31,7 @@ import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v4.widget.ContentLoadingProgressBar;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -78,8 +79,6 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
     private BrowseAdapter mBrowserAdapter;
     private String mMediaId;
     private MediaFragmentListener mMediaFragmentListener;
-    private View mErrorView;
-    private TextView mErrorMessage;
     private SwipeRefreshLayout mSwipeLayout;
 
     @Inject
@@ -98,7 +97,7 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
                 boolean isOnline = NetworkHelper.isOnline(context);
                 if (isOnline != oldOnline) {
                     oldOnline = isOnline;
-                    checkForUserVisibleErrors(false);
+                    mMediaFragmentListener.checkForUserVisibleErrors(false);
                     if (isOnline) {
                         mBrowserAdapter.notifyDataSetChanged();
                     }
@@ -126,7 +125,7 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
             super.onPlaybackStateChanged(state);
             LogHelper.d(TAG, "Received state change: ", state);
 
-            checkForUserVisibleErrors(false);
+            mMediaFragmentListener.checkForUserVisibleErrors(false);
             mBrowserAdapter.notifyDataSetChanged();
         }
     };
@@ -143,7 +142,7 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
                     if (children.isEmpty() && DropboxHelper.isUnlinked(mDBApi.getSession())) {
                         mMediaFragmentListener.onDropboxSessionUnlinked();
                     } else {
-                        checkForUserVisibleErrors(children.isEmpty());
+                        mMediaFragmentListener.checkForUserVisibleErrors(children.isEmpty());
                         mBrowserAdapter.clear();
                         mBrowserAdapter.addAll(children);
                         mBrowserAdapter.notifyDataSetChanged();
@@ -162,7 +161,7 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
                 mSwipeLayout.setRefreshing(false);
 
                 Toast.makeText(getActivity(), R.string.error_loading_media, Toast.LENGTH_LONG).show();
-                checkForUserVisibleErrors(true);
+                mMediaFragmentListener.checkForUserVisibleErrors(true);
             }
         };
 
@@ -189,15 +188,12 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
         mSwipeLayout.setColorSchemeResources(R.color.app_accent);
         mSwipeLayout.post(() -> mSwipeLayout.setRefreshing(true));
 
-        mErrorView = rootView.findViewById(R.id.playback_error);
-        mErrorMessage = (TextView) mErrorView.findViewById(R.id.error_message);
-
         mBrowserAdapter = new BrowseAdapter(getActivity());
 
         ListView listView = (ListView) rootView.findViewById(R.id.list_view);
         listView.setAdapter(mBrowserAdapter);
         listView.setOnItemClickListener((parent, view, position, id) -> {
-            checkForUserVisibleErrors(false);
+            mMediaFragmentListener.checkForUserVisibleErrors(false);
             MediaBrowser.MediaItem item = mBrowserAdapter.getItem(position);
             mMediaFragmentListener.onMediaItemSelected(item);
         });
@@ -221,7 +217,7 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
 
         // Registers BroadcastReceiver to track network connection changes.
         this.getActivity().registerReceiver(mConnectivityChangeReceiver,
-            new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+                new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
     }
 
     @Override
@@ -291,34 +287,6 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
         }
     }
 
-    private void checkForUserVisibleErrors(boolean forceError) {
-        boolean showError = forceError;
-        // If offline, message is about the lack of connectivity:
-        if (!NetworkHelper.isOnline(getActivity())) {
-            mErrorMessage.setText(R.string.error_no_connection);
-            showError = true;
-        } else {
-            // otherwise, if state is ERROR and metadata!=null, use playback state error message:
-            MediaController controller = getActivity().getMediaController();
-            if (controller != null
-                && controller.getMetadata() != null
-                && controller.getPlaybackState() != null
-                && controller.getPlaybackState().getState() == PlaybackState.STATE_ERROR
-                && controller.getPlaybackState().getErrorMessage() != null) {
-                mErrorMessage.setText(controller.getPlaybackState().getErrorMessage());
-                showError = true;
-            } else if (forceError) {
-                // Finally, if the caller requested to show error, show a generic message:
-                mErrorMessage.setText(R.string.error_loading_media);
-                showError = true;
-            }
-        }
-        mErrorView.setVisibility(showError ? View.VISIBLE : View.GONE);
-        LogHelper.d(TAG, "checkForUserVisibleErrors. forceError=", forceError,
-            " showError=", showError,
-            " isOnline=", NetworkHelper.isOnline(getActivity()));
-    }
-
     private void updateTitle() {
         if (MediaIDHelper.MEDIA_ID_ROOT.equals(mMediaId)) {
             mMediaFragmentListener.setToolbarTitle(null);
@@ -347,7 +315,7 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
                                     DropboxHelper.isUnlinked(mDBApi.getSession())) {
                                 mMediaFragmentListener.onDropboxSessionUnlinked();
                             }
-                            checkForUserVisibleErrors(true);
+                            mMediaFragmentListener.checkForUserVisibleErrors(true);
                             mSwipeLayout.setRefreshing(false);
                         }, () -> {
                             mSwipeLayout.setRefreshing(false);
@@ -397,7 +365,7 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
     public interface MediaFragmentListener extends MediaBrowserProvider {
         void onMediaItemSelected(MediaBrowser.MediaItem item);
         void setToolbarTitle(CharSequence title);
+        void checkForUserVisibleErrors(boolean forceError);
         void onDropboxSessionUnlinked();
     }
-
 }

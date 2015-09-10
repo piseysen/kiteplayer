@@ -25,6 +25,10 @@ import android.media.session.MediaController;
 import android.media.session.PlaybackState;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.Snackbar;
+import android.support.v7.widget.CardView;
+import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -252,5 +256,25 @@ public class PlaybackControlsFragment extends Fragment {
     static private void initializeColorStateLists(Context ctx) {
         sColorStateNotPlaying = ColorStateList.valueOf(ResourceHelper.getThemeColor(ctx,android.R.attr.textColorSecondary,R.color.secondary_text_light));
         sColorStatePlaying = ColorStateList.valueOf(ResourceHelper.getThemeColor(ctx,R.attr.colorAccent,R.color.app_accent));
+    }
+
+    public static final class Behavior extends CoordinatorLayout.Behavior<CardView> {
+        public Behavior(Context context, AttributeSet attrs) {}
+
+        @Override
+        public boolean layoutDependsOn(CoordinatorLayout parent, CardView child, View dependency) {
+            return dependency instanceof Snackbar.SnackbarLayout;
+        }
+
+        @Override
+        public boolean onDependentViewChanged(CoordinatorLayout parent, CardView child, View dependency) {
+            parent.setMinimumHeight(child.getHeight() + dependency.getHeight());
+            return true;
+        }
+
+        @Override
+        public void onDependentViewRemoved(CoordinatorLayout parent, CardView child, View dependency) {
+            parent.setMinimumHeight(child.getHeight());
+        }
     }
 }

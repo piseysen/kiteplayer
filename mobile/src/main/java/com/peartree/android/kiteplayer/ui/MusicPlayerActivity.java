@@ -22,14 +22,18 @@ import android.content.Intent;
 import android.media.browse.MediaBrowser;
 import android.media.session.MediaController;
 import android.media.session.MediaSession;
+import android.media.session.PlaybackState;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.provider.MediaStore;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatDialog;
 import android.text.TextUtils;
 
 import com.peartree.android.kiteplayer.R;
 import com.peartree.android.kiteplayer.utils.LogHelper;
+import com.peartree.android.kiteplayer.utils.NetworkHelper;
 
 import java.util.List;
 
@@ -60,6 +64,8 @@ public class MusicPlayerActivity extends BaseActivity
 
     private Bundle mVoiceSearchParams;
     private AppCompatDialog mProgressDialog;
+    private Snackbar mSnackbarError;
+    private CoordinatorLayout mCoordinatorLayout;
 
     private final MediaController.Callback mediaCallback = new MediaController.Callback() {
         @Override
@@ -86,6 +92,7 @@ public class MusicPlayerActivity extends BaseActivity
         LogHelper.d(TAG, "Activity onCreate");
 
         setContentView(R.layout.activity_player);
+        mCoordinatorLayout = (CoordinatorLayout) findViewById(R.id.coordinatorlayout);
 
         initializeToolbar();
         initializeFromParams(savedInstanceState, getIntent());
@@ -138,6 +145,69 @@ public class MusicPlayerActivity extends BaseActivity
             title = getString(R.string.app_name);
         }
         setTitle(title);
+    }
+
+    @Override
+    public void checkForUserVisibleErrors(boolean forceError) {
+
+        boolean showError = forceError;
+        CharSequence snackbarMessage = getText(R.string.error_loading_media);
+        int snackbarDuration = Snackbar.LENGTH_LONG;
+
+        // If offline, message is about the lack of connectivity:
+        if (!NetworkHelper.isOnline(this)) {
+
+            snackbarMessage = getText(R.string.error_no_connection);
+            snackbarDuration = Snackbar.LENGTH_INDEFINITE;
+            showError = true;
+
+            // If unable to stream, message is about settings
+        } else if (!NetworkHelper.canStream(this)) {
+
+            snackbarMessage = getText(R.string.error_no_streaming);
+            snackbarDuration = Snackbar.LENGTH_INDEFINITE;
+            showError = true;
+
+        } else {
+
+            // otherwise, if state is ERROR and metadata!=null, use playback state error message:
+            MediaController controller = this.getMediaController();
+            if (controller != null
+                    && controller.getMetadata() != null
+                    && controller.getPlaybackState() != null
+                    && controller.getPlaybackState().getState() == PlaybackState.STATE_ERROR
+                    && controller.getPlaybackState().getErrorMessage() != null) {
+
+                snackbarMessage = controller.getPlaybackState().getErrorMessage();
+                snackbarDuration = Snackbar.LENGTH_LONG;
+                showError = true;
+
+            } else if (forceError) {
+
+                // Finally, if the caller requested to show error, show a generic message:
+                showError = true;
+            }
+        }
+
+        if (showError && (mSnackbarError == null || !mSnackbarError.isShown())) {
+
+            if (mSnackbarError == null) {
+                mSnackbarError = Snackbar.make(mCoordinatorLayout,snackbarMessage,snackbarDuration);
+            } else {
+                mSnackbarError.setText(snackbarMessage);
+                mSnackbarError.setDuration(snackbarDuration);
+            }
+
+            mSnackbarError.show();
+        } else if (!showError) {
+            if (mSnackbarError != null) {
+                mSnackbarError.dismiss();
+            }
+        }
+
+        LogHelper.d(TAG, "checkForUserVisibleErrors. forceError=", forceError,
+                " showError=", showError,
+                " isOnline=", NetworkHelper.isOnline(this));
     }
 
     @Override
