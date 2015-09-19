@@ -16,6 +16,7 @@
 
 package com.peartree.android.kiteplayer.utils;
 
+import android.content.Context;
 import android.media.MediaMetadata;
 import android.media.session.MediaSession;
 import android.media.session.MediaSession.QueueItem;
@@ -40,9 +41,11 @@ import static com.peartree.android.kiteplayer.utils.MediaIDHelper.MEDIA_ID_ROOT;
 public class QueueHelper {
 
     private static final String TAG = LogHelper.makeLogTag(QueueHelper.class);
+    private static final Observable<Integer> mIndexSequence =
+            Observable.just(1).repeat().scan(0,(first,second) -> first+second);
 
     public static Observable<QueueItem> getPlayingQueue(String mediaId,
-            MusicProvider musicProvider) {
+            MusicProvider musicProvider, Context ctx) {
 
         final String categoryType = MediaIDHelper.extractBrowserCategoryFromMediaID(mediaId);
         final String[] categories = MediaIDHelper.extractBrowseCategoryValueFromMediaID(mediaId);
@@ -56,28 +59,29 @@ public class QueueHelper {
 
         Observable<MediaMetadata> mmObservable;
         if (categoryType.equals(MEDIA_ID_MUSICS_BY_SEARCH)) {
-            // TODO Test
-            mmObservable = Observable.from(musicProvider.searchMusicBySongTitle(categories[0]));
+            // TODO Test (Oddball case related to cast)
+            mmObservable = musicProvider.searchMusicByVoiceParams(
+                    new VoiceSearchParams(categories[0],new Bundle()));
         } else if (categoryType.equals(MEDIA_ID_ROOT)) {
             // TODO Move folder formatting to utils class
             String folder = "/"+ TextUtils.join("/",categories);
             mmObservable = musicProvider
-                    .getMusicByFolder(folder, MusicProvider.FLAG_SONG_PLAY_READY|MusicProvider.FLAG_SONG_METADATA_TEXT);
+                    .getMusicByFolder(folder);
         } else {
             LogHelper.e(TAG, "Unrecognized category type: ", categoryType, " for media ", mediaId);
             return null;
         }
 
         return mmObservable
-                .filter(mm -> mm.getString(MusicProvider.CUSTOM_METADATA_TRACK_SOURCE) != null)
-                .lift(new CountOperator<>())
-                .map(pair -> convertToQueueItem(pair.second,pair.first,categoryType,categories));
+                .filter(mm -> MusicProvider.willBePlayable(ctx,mm))
+                .zipWith(mIndexSequence, (mm, index) ->
+                        convertToQueueItem(mm, index, categoryType, categories));
     }
 
 
 
     public static Observable<QueueItem> getPlayingQueueFromSearch(String query,
-            Bundle queryParams, MusicProvider musicProvider) {
+            Bundle queryParams, MusicProvider musicProvider, Context ctx) {
 
         LogHelper.d(TAG, "Creating playing queue for musics from search: ", query,
             " params=", queryParams);
@@ -89,36 +93,20 @@ public class QueueHelper {
         if (params.isAny) {
             // If isAny is true, we will play anything. This is app-dependent, and can be,
             // for example, favorite playlists, "I'm feeling lucky", most recent, etc.
-            return getRandomQueue(musicProvider);
+            return getRandomQueue(musicProvider, ctx);
         }
 
-        Iterable<MediaMetadata> result = null;
-        if (params.isAlbumFocus) {
-            result = musicProvider.searchMusicByAlbum(params.album);
-        } else if (params.isGenreFocus) {
-            result = musicProvider.searchMusicByGenre(params.genre);
-        } else if (params.isArtistFocus) {
-            result = musicProvider.searchMusicByArtist(params.artist);
-        } else if (params.isSongFocus) {
-            result = musicProvider.searchMusicBySongTitle(params.song);
-        }
+        Observable<MediaMetadata> result =
+                musicProvider.searchMusicByVoiceParams(params);
 
-        // If there was no results using media focus parameter, we do an unstructured query.
-        // This is useful when the user is searching for something that looks like an artist
-        // to Google, for example, but is not. For example, a user searching for Madonna on
-        // a PodCast application wouldn't get results if we only looked at the
-        // Artist (podcast author). Then, we can instead do an unstructured search.
-        if (params.isUnstructured || result == null || !result.iterator().hasNext()) {
-            // To keep it simple for this example, we do unstructured searches on the
-            // song title only. A real world application could search on other fields as well.
-            result = musicProvider.searchMusicBySongTitle(query);
-        }
-
-        return Observable
-                .from(result)
-                .filter(mm -> mm.getString(MusicProvider.CUSTOM_METADATA_TRACK_SOURCE) != null)
-                .lift(new CountOperator<MediaMetadata>())
-                .map(pair -> convertToQueueItem(pair.second, pair.first, MEDIA_ID_MUSICS_BY_SEARCH, new String[]{query}));
+        return result
+                .switchIfEmpty(musicProvider.searchMusicByVoiceParams(
+                        new VoiceSearchParams(query, new Bundle())))
+                .filter(mm -> MusicProvider.willBePlayable(ctx,mm))
+                .zipWith(mIndexSequence, (mm, index) ->
+                        convertToQueueItem(
+                                mm, index,
+                                MEDIA_ID_MUSICS_BY_SEARCH, new String[]{query}));
     }
 
 
@@ -185,7 +173,7 @@ public class QueueHelper {
      * @param musicProvider the provider used for fetching music.
      * @return list containing {@link MediaSession.QueueItem}'s
      */
-    public static Observable<QueueItem> getRandomQueue(MusicProvider musicProvider) {
+    public static Observable<QueueItem> getRandomQueue(MusicProvider musicProvider, Context ctx) {
         List<MediaMetadata> result = new ArrayList<>();
 
         // TODO Implement getRandomQueue
@@ -204,12 +192,13 @@ public class QueueHelper {
 
         return Observable
                 .from(result)
-                .filter(mm -> mm.getString(MusicProvider.CUSTOM_METADATA_TRACK_SOURCE) != null)
-                .lift(new CountOperator<>())
-                .map(pair -> convertToQueueItem(pair.second, pair.first, MEDIA_ID_MUSICS_BY_SEARCH, new String[]{"random"}));
+                .filter(mm -> MusicProvider.willBePlayable(ctx,mm))
+                .zipWith(mIndexSequence, (mm, index) ->
+                        convertToQueueItem(
+                                mm, index, MEDIA_ID_MUSICS_BY_SEARCH, new String[]{"random"}));
     }
 
-    public static boolean isIndexPlayable(int index, List<QueueItem> queue) {
+    public static boolean isIndexValid(int index, List<QueueItem> queue) {
         return (queue != null && index >= 0 && index < queue.size());
     }
 }

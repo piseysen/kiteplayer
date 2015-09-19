@@ -9,6 +9,8 @@ import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 
+import rx.Observable;
+
 public class DropboxDBSongMapper {
 
     public static ContentValues toContentValues(DropboxDBSong song) {
@@ -83,6 +85,30 @@ public class DropboxDBSongMapper {
             song.setEntryId(mCursor.getLong(mCursor.getColumnIndexOrThrow(DropboxDBContract.Song.COLUMN_NAME_ENTRY_ID)));
 
             return song;
+        }
+
+        public Observable<DropboxDBSong> getObservable() {
+            return Observable.create(subscriber -> {
+                try {
+
+                    if (this.isClosed()) {
+                        subscriber.onError(new IllegalStateException("Cursor already closed."));
+                    }
+
+                    if (this.getCount() > 0) {
+                        this.moveToFirst();
+
+                        do {
+                            subscriber.onNext(this.getSong());
+                        } while (this.moveToNext());
+
+                    }
+
+                } finally {
+                    this.close();
+                    subscriber.onCompleted();
+                }
+            });
         }
 
     }

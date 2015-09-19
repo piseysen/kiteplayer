@@ -18,31 +18,41 @@ package com.peartree.android.kiteplayer.model;
 
 import android.app.Application;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.media.MediaMetadata;
+import android.media.session.MediaSession;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
+import com.peartree.android.kiteplayer.R;
+import com.peartree.android.kiteplayer.VoiceSearchParams;
 import com.peartree.android.kiteplayer.database.DropboxDBEntry;
 import com.peartree.android.kiteplayer.database.DropboxDBEntryDAO;
 import com.peartree.android.kiteplayer.database.DropboxDBSong;
+import com.peartree.android.kiteplayer.database.DropboxDBSongDAO;
 import com.peartree.android.kiteplayer.dropbox.DropboxSyncService;
 import com.peartree.android.kiteplayer.utils.LogHelper;
+import com.peartree.android.kiteplayer.utils.MediaIDHelper;
 import com.peartree.android.kiteplayer.utils.NetworkHelper;
-import com.peartree.android.kiteplayer.utils.PrefUtils;
 
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import rx.Observable;
-import rx.Subscriber;
 import rx.schedulers.Schedulers;
+
+import static com.peartree.android.kiteplayer.utils.SongCacheHelper.LARGE_ALBUM_ART_DIMENSIONS;
+import static com.peartree.android.kiteplayer.utils.SongCacheHelper.SMALL_ALBUM_ART_DIMENSIONS;
 
 /**
  * Utility class to get a list of MusicTrack's based on a server-side JSON
@@ -58,15 +68,11 @@ public class MusicProvider {
     public static final String CUSTOM_METADATA_DIRECTORY = "__DIRECTORY__";
     public static final String CUSTOM_METADATA_IS_DIRECTORY = "__IS_DIRECTORY__";
 
-    public static final int FLAG_SONG_PLAY_READY = 1 << 0;
-    public static final int FLAG_SONG_METADATA_TEXT = 1 << 1;
-    public static final int FLAG_SONG_METADATA_IMAGE = 1 << 2;
-    public static final int FLAG_SONG_METADATA_ALL = FLAG_SONG_METADATA_TEXT | FLAG_SONG_METADATA_IMAGE;
-
-    private Context mApplicationContext;
+    private final Context mApplicationContext;
 
     private DropboxAPI<AndroidAuthSession> mDBApi = null;
     private DropboxDBEntryDAO mEntryDao;
+    private DropboxDBSongDAO mSongDao;
     private DropboxSyncService mDBSyncService;
 
     private volatile State mCurrentState = State.NON_INITIALIZED;
@@ -75,18 +81,15 @@ public class MusicProvider {
     public MusicProvider(Application application,
                          DropboxAPI<AndroidAuthSession> dbApi,
                          DropboxDBEntryDAO entryDao,
+                         DropboxDBSongDAO songDao,
                          DropboxSyncService syncService) {
 
         this.mApplicationContext = application.getApplicationContext();
 
         this.mDBApi = dbApi;
         this.mEntryDao = entryDao;
+        this.mSongDao = songDao;
         this.mDBSyncService = syncService;
-    }
-
-    public void deleteAll() {
-        mEntryDao.deleteAll();
-        mCurrentState = State.NON_INITIALIZED;
     }
 
     enum State {
@@ -96,110 +99,167 @@ public class MusicProvider {
     /**
      * Get the list of music tracks from a server and caches the track information
      */
-    public Observable<Long> init() {
+    public Observable init() {
+
+        Observable<Long> existingEntries =
+                mEntryDao
+                        .findByParentDir("/")
+                        .map(entry -> entry.getId());
+
+        Observable<Long> newEntries =
+                mDBSyncService
+                        .synchronizeEntryDB();
+
+        return existingEntries
+                .isEmpty()
+                .flatMap(empty -> {
+                    if (empty) {
+                        // DB is empty
+                        // Synchronization must happen happen synchronously
+                        return newEntries;
+
+                    } else {
+
+                        // DB not empty
+                        // Synchronization will happen asynchronously
+                        newEntries
+                                .subscribeOn(Schedulers.io())
+                                .subscribe(id -> {}, error ->
+                                        LogHelper.w(TAG, error,
+                                                "init - Failed to refresh DB asynchronously"));
+
+                        // Consider provider initialized
+                        return Observable.empty();
+                    }
+                })
+                .ignoreElements()
+                .doOnSubscribe(() -> mCurrentState = State.INITIALIZING)
+                .doOnError((error) -> mCurrentState = State.NON_INITIALIZED)
+                .doOnCompleted(() -> mCurrentState = State.INITIALIZED);
+    }
+
+    public Observable refresh() {
+        return mDBSyncService.synchronizeEntryDB().ignoreElements();
+    }
+
+    public Observable<MediaMetadata> getMusic(String musicId) {
+
+        return getEntryWithSong(musicId)
+                .flatMap(this::toMediaMetadata);
+    }
+
+    public Observable<MediaMetadata> getMusicForPlayback(String musicId) {
 
         return mDBSyncService
-                .synchronizeEntryDB()
-                .lift(s -> new Subscriber<Long>(s) {
+                .prepareSongForPlayback(getEntryWithSong(musicId))
+                .flatMap(this::toMediaMetadata);
+    }
 
-                    @Override
-                    public void onCompleted() {
-                        if (!s.isUnsubscribed()) {
-                            mCurrentState = State.INITIALIZED;
-                            s.onCompleted();
-                        }
+    public void preloadPlaylist(List<MediaSession.QueueItem> queue) {
+
+        mDBSyncService.downloadSongQueue(
+                Observable
+                        .from(queue)
+                        .flatMap(queueItem -> {
+                            String musicId =
+                                    MediaIDHelper.extractMusicIDFromMediaID(
+                                            queueItem.getDescription().getMediaId());
+                            return getEntryWithSong(musicId);
+                        }));
+    }
+
+    public Observable<MediaMetadata> getMusicMetadata(String musicId) {
+
+        return mDBSyncService
+                .fillSongMetadata(getEntryWithSong(musicId))
+                .flatMap(this::toMediaMetadata)
+                .map(mm -> {
+
+                    Bitmap bitmap = null;
+                    Bitmap icon = null;
+
+                    try {
+                        bitmap = Glide
+                                .with(mApplicationContext)
+                                .load(mm)
+                                .asBitmap()
+                                .error(R.drawable.ic_album_art)
+                                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                                .into(LARGE_ALBUM_ART_DIMENSIONS[0], LARGE_ALBUM_ART_DIMENSIONS[1])
+                                .get();
+
+                        icon = Glide
+                                .with(mApplicationContext)
+                                .load(mm)
+                                .asBitmap()
+                                .error(R.drawable.ic_album_art)
+                                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                                .into(SMALL_ALBUM_ART_DIMENSIONS[0], SMALL_ALBUM_ART_DIMENSIONS[1])
+                                .get();
+
+                    } catch (InterruptedException | ExecutionException e) {
+                        LogHelper.w(TAG, e, "getMusicMetadata - Failed loading album art");
                     }
 
-                    @Override
-                    public void onError(Throwable e) {
-                        if (!s.isUnsubscribed()) {
-                            mCurrentState = State.NON_INITIALIZED;
-                            s.onError(e);
-                        }
-                    }
+                    return new MediaMetadata.Builder(mm)
 
-                    @Override
-                    public void onNext(Long entryId) {
-                        if (!s.isUnsubscribed()) {
-                            mCurrentState = State.INITIALIZING;
-                            s.onNext(entryId);
-                        }
-                    }
+                            // set high resolution bitmap in METADATA_KEY_ALBUM_ART. This is used, for
+                            // example, on the lockscreen background when the media session is active.
+                            .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, bitmap)
+
+                                    // set small version of the album art in the DISPLAY_ICON. This is used on
+                                    // the MediaDescription and thus it should be small to be serialized if
+                                    // necessary..
+                            .putBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON, icon)
+
+                            .build();
                 });
+
     }
 
     /**
      * Get media by parent folder
      * Results can include folders and audio files
      */
-    public Observable<MediaMetadata> getMusicByFolder(@NonNull String parentFolder, int cacheFlags) {
+    public Observable<MediaMetadata> getMusicByFolder(@NonNull String parentFolder) {
 
         // TODO Sort results
-
-        return mDBSyncService.fillSongMetadata(mEntryDao.findByParentDir(parentFolder), cacheFlags)
-                .map(entry -> buildMetadataFromDBEntry(
-                        entry,
-                        mDBSyncService.getCachedSongFile(entry),
-                        NetworkHelper.canStream(mApplicationContext)));
+        return mEntryDao
+                .findByParentDir(parentFolder)
+                .map(entry -> {
+                    if (!entry.isDir()) {
+                        entry.setSong(mSongDao.findByEntryId(entry.getId()));
+                    }
+                    return entry;
+                })
+                .flatMap(this::toMediaMetadata);
     }
 
-    /**
-     * Very basic implementation of a search that filter music tracks with title containing
-     * the given query.
-     *
-     */
-    public Iterable<MediaMetadata> searchMusicByGenre(String query) {
-        return searchMusic(MediaMetadata.METADATA_KEY_TITLE, query);
+    public Observable<MediaMetadata> searchMusicByVoiceParams(VoiceSearchParams params) {
+
+        LogHelper.d(TAG,"searchMusicByVoiceParams - Search by params: ",params.toString());
+
+        if (params.isAny) {
+            return Observable.empty();
+        } else if (params.isUnstructured) {
+            return wrapInEntry(mSongDao.queryByKeyword(params.query));
+        } else {
+            return wrapInEntry(mSongDao.query(params.genre, params.artist, params.album, params.song));
+        }
     }
 
-    /**
-     * Very basic implementation of a search that filter music tracks with title containing
-     * the given query.
-     *
-     */
-    public Iterable<MediaMetadata> searchMusicBySongTitle(String query) {
-        return searchMusic(MediaMetadata.METADATA_KEY_TITLE, query);
-    }
+    private Observable<DropboxDBEntry> getEntryWithSong(String musicId) {
 
-    /**
-     * Very basic implementation of a search that filter music tracks with album containing
-     * the given query.
-     *
-     */
-    public Iterable<MediaMetadata> searchMusicByAlbum(String query) {
-        return searchMusic(MediaMetadata.METADATA_KEY_ALBUM, query);
-    }
-
-    /**
-     * Very basic implementation of a search that filter music tracks with artist containing
-     * the given query.
-     *
-     */
-    public Iterable<MediaMetadata> searchMusicByArtist(String query) {
-        return searchMusic(MediaMetadata.METADATA_KEY_ARTIST, query);
-    }
-
-    Iterable<MediaMetadata> searchMusic(String metadataField, String query) {
-
-        // TODO Implement searchMusic
-        return Collections.emptyList();
-
-    }
-
-
-    /**
-     * Return the MediaMetadata for the given musicID.
-     *
-     * @param musicId The unique, non-hierarchical music ID.
-     */
-    public Observable<MediaMetadata> getMusic(String musicId, int cacheFlags) {
-
-        return mDBSyncService
-                .fillSongMetadata(Observable.just(mEntryDao.findById(Long.valueOf(musicId))), cacheFlags)
-                .map(entry -> buildMetadataFromDBEntry(
-                        entry,
-                        mDBSyncService.getCachedSongFile(entry),
-                        NetworkHelper.canStream(mApplicationContext)));
+        return Observable.create(subscriber -> {
+            final DropboxDBEntry entry = mEntryDao.findById(Long.valueOf(musicId));
+            if (entry != null) {
+                if (!entry.isDir()) {
+                    entry.setSong(mSongDao.findByEntryId(entry.getId()));
+                }
+                subscriber.onNext(entry);
+            }
+            subscriber.onCompleted();
+        });
 
     }
 
@@ -208,32 +268,45 @@ public class MusicProvider {
         // TODO Implement updateMusic? This is intended to cache mm containing album art data
     }
 
-    public void setFavorite(String musicId, boolean favorite) {
-
-        // TODO Implement setFavorite
-    }
-
-    public boolean isFavorite(String musicId) {
-
-        // TODO Implement isFavorite
-        return false;
+    public void deleteAll() {
+        mEntryDao.deleteAll();
+        mCurrentState = State.NON_INITIALIZED;
     }
 
     public boolean isInitialized() {
         return mCurrentState == State.INITIALIZED;
     }
 
-    public static MediaMetadata buildMetadataFromDBEntry(DropboxDBEntry entry, @Nullable File cachedSongFile, boolean canStream) {
+    private Observable<MediaMetadata> toMediaMetadata(@NonNull DropboxDBEntry entry) {
+        return Observable.just(
+                buildMetadataFromDBEntry(
+                        mApplicationContext,
+                        entry,
+                        mDBSyncService.getCachedSongFile(entry),
+                        NetworkHelper.canStream(mApplicationContext)));
+    }
+
+    @NonNull
+    private Observable<MediaMetadata> wrapInEntry(Observable<DropboxDBSong> songs) {
+        return songs.map(song -> {
+            DropboxDBEntry entry = mEntryDao.findById(song.getEntryId());
+            entry.setSong(song);
+            return entry;
+        }).flatMap(this::toMediaMetadata);
+    }
+
+    public static MediaMetadata buildMetadataFromDBEntry(Context ctx, DropboxDBEntry entry, @Nullable File cachedSongFile, boolean canStream) {
 
         MediaMetadata.Builder builder = new MediaMetadata.Builder();
 
         builder
                 .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, Long.toString(entry.getId()))
+                .putString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE, entry.getFilename())
                 .putString(CUSTOM_METADATA_FILENAME, entry.getFilename())
                 .putString(CUSTOM_METADATA_DIRECTORY, entry.getParentDir())
                 .putString(CUSTOM_METADATA_IS_DIRECTORY, Boolean.toString(entry.isDir()));
 
-        if (!entry.isDir() && entry.getSong() != null) {
+        if (!entry.isDir() && entry.getOrCreateSong() != null) {
 
             DropboxDBSong song = entry.getSong();
 
@@ -246,14 +319,38 @@ public class MusicProvider {
             }
 
             builder
-                    .putString(MediaMetadata.METADATA_KEY_ALBUM, song.getAlbum() != null ? song.getAlbum() : entry.getParentDir())
+                    .putString(MediaMetadata.METADATA_KEY_ALBUM, song.getAlbum())
                     .putString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST, song.getAlbumArtist())
                     .putString(MediaMetadata.METADATA_KEY_ARTIST, song.getArtist())
                     .putLong(MediaMetadata.METADATA_KEY_DURATION, song.getDuration())
                     .putString(MediaMetadata.METADATA_KEY_GENRE, song.getGenre())
-                    .putString(MediaMetadata.METADATA_KEY_TITLE, song.getTitle()!=null ? song.getTitle() : entry.getFilename())
+                    .putString(MediaMetadata.METADATA_KEY_TITLE, song.getTitle())
                     .putLong(MediaMetadata.METADATA_KEY_TRACK_NUMBER, song.getTrackNumber())
-                    .putLong(MediaMetadata.METADATA_KEY_NUM_TRACKS, song.getTotalTracks());
+                    .putLong(MediaMetadata.METADATA_KEY_NUM_TRACKS, song.getTotalTracks())
+                    .putString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE,
+                            song.getTitle()!=null ? song.getTitle() : entry.getFilename())
+                    .putString(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE,
+                            song.getAlbum() != null ? song.getAlbum() : entry.getParentDir());
+
+        } else if (entry.isDir()){
+
+            try {
+
+                Bitmap icon = Glide
+                        .with(ctx.getApplicationContext())
+                        .load("android.resource://" + ctx.getPackageName() +
+                                "/drawable/ic_folder_grey_36dp")
+                        .asBitmap()
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .into(SMALL_ALBUM_ART_DIMENSIONS[0], SMALL_ALBUM_ART_DIMENSIONS[1])
+                        .get();
+
+                builder
+                        .putBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON, icon);
+
+            } catch (InterruptedException | ExecutionException e) {
+                LogHelper.w(TAG,"Failed to load folder icon");
+            }
 
         }
 
@@ -271,7 +368,7 @@ public class MusicProvider {
         try {
             new URL(mm.getString(CUSTOM_METADATA_TRACK_SOURCE));
             isSourceRemote = true;
-        } catch (MalformedURLException e) {
+        } catch (Exception e) {
             isSourceRemote = false;
         }
 

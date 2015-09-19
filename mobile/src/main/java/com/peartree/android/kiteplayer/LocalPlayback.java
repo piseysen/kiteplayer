@@ -168,8 +168,8 @@ public class LocalPlayback implements Playback, AudioManager.OnAudioFocusChangeL
             mState = PlaybackState.STATE_STOPPED;
             relaxResources(false); // release everything except MediaPlayer
 
-            mMusicProvider.getMusic(
-                    MediaIDHelper.extractMusicIDFromMediaID(item.getDescription().getMediaId()), MusicProvider.FLAG_SONG_PLAY_READY | MusicProvider.FLAG_SONG_METADATA_ALL)
+            mMusicProvider.getMusicForPlayback(
+                    MediaIDHelper.extractMusicIDFromMediaID(item.getDescription().getMediaId()))
                     .single()
                     .subscribeOn(Schedulers.io())
                     .subscribe(track -> {
@@ -200,7 +200,7 @@ public class LocalPlayback implements Playback, AudioManager.OnAudioFocusChangeL
                                 mCallback.onPlaybackStatusChanged(mState);
                             }
 
-                        } catch (IOException ex) {
+                        } catch (Exception ex) {
                             LogHelper.e(TAG, ex, "Exception playing song");
                             if (mCallback != null) {
                                 mCallback.onError(ex.getMessage());

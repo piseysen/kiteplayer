@@ -19,7 +19,7 @@ import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
-import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.media.MediaMetadata;
 import android.media.session.MediaController;
 import android.media.session.PlaybackState;
@@ -58,7 +58,7 @@ public class PlaybackControlsFragment extends Fragment {
     private TextView mSubtitle;
     private TextView mExtraInfo;
     private ImageView mAlbumArt;
-    private String mArtUrl;
+
     // Receive callbacks from the MediaController. Here we update our state such as which queue
     // is being shown, the current title and description and the PlaybackState.
     private final MediaController.Callback mCallback = new MediaController.Callback() {
@@ -106,7 +106,7 @@ public class PlaybackControlsFragment extends Fragment {
                 MediaMetadata metadata = getActivity().getMediaController().getMetadata();
                 if (metadata != null) {
                     intent.putExtra(MusicPlayerActivity.EXTRA_CURRENT_MEDIA_DESCRIPTION,
-                        metadata.getDescription());
+                            metadata.getDescription());
                 }
                 startActivity(intent);
             }
@@ -156,12 +156,19 @@ public class PlaybackControlsFragment extends Fragment {
         mTitle.setText(metadata.getDescription().getTitle());
         mSubtitle.setText(metadata.getDescription().getSubtitle());
 
-        Glide
-                .with(this)
-                .load(metadata)
-                .error(R.drawable.ic_album_art)
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .into(mAlbumArt);
+        Bitmap albumThumbnail =
+            metadata.getBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON);
+
+        if (albumThumbnail != null) {
+            mAlbumArt.setImageBitmap(albumThumbnail);
+        } else {
+            Glide
+                    .with(this)
+                    .load(metadata)
+                    .error(R.drawable.ic_album_art)
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .into(mAlbumArt);
+        }
     }
 
     public void setExtraInfo(String extraInfo) {

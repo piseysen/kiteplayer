@@ -19,8 +19,6 @@ package com.peartree.android.kiteplayer;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.media.MediaDescription;
 import android.media.MediaMetadata;
 import android.media.browse.MediaBrowser;
 import android.media.browse.MediaBrowser.MediaItem;
@@ -35,8 +33,6 @@ import android.support.annotation.NonNull;
 import android.support.v7.media.MediaRouter;
 import android.text.TextUtils;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.google.android.gms.cast.ApplicationMetadata;
 import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
 import com.google.android.libraries.cast.companionlibrary.cast.callbacks.VideoCastConsumerImpl;
@@ -52,7 +48,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
@@ -63,8 +59,6 @@ import rx.schedulers.Schedulers;
 import static com.peartree.android.kiteplayer.utils.MediaIDHelper.MEDIA_ID_ROOT;
 import static com.peartree.android.kiteplayer.utils.MediaIDHelper.createMediaID;
 import static com.peartree.android.kiteplayer.utils.MediaIDHelper.extractBrowseCategoryValueFromMediaID;
-import static com.peartree.android.kiteplayer.utils.SongCacheHelper.LARGE_ALBUM_ART_DIMENSIONS;
-import static com.peartree.android.kiteplayer.utils.SongCacheHelper.SMALL_ALBUM_ART_DIMENSIONS;
 
 /**
  * This class provides a MediaBrowser through a service. It exposes the media library to a browsing
@@ -290,8 +284,10 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
     @Override
     public BrowserRoot onGetRoot(@NonNull String clientPackageName, int clientUid,
                                  Bundle rootHints) {
+
         LogHelper.d(TAG, "OnGetRoot: clientPackageName=", clientPackageName,
                 "; clientUid=", clientUid, " ; rootHints=", rootHints);
+
         // To ensure you are not allowing any arbitrary app to browse your app's contents, you
         // need to check the origin:
         if (!mPackageValidator.isCallerAllowed(this, clientPackageName, clientUid)) {
@@ -307,6 +303,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
             // needs to run differently when connected to the car, this is where you should handle
             // it.
         }
+
         //noinspection StatementWithEmptyBody
         if (WearHelper.isValidWearCompanionPackage(clientPackageName)) {
             // Optional: if your app needs to adapt the music library for when browsing from a
@@ -344,13 +341,10 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
      */
     private void loadChildrenImpl(final String parentMediaId,
                                   final Result<List<MediaBrowser.MediaItem>> result) {
+
         LogHelper.d(TAG, "OnLoadChildren: parentMediaId=", parentMediaId);
 
-        List<MediaBrowser.MediaItem> mediaItems = new ArrayList<>();
-
-
-        LogHelper.d(TAG, "OnLoadChildren.FOLDERS");
-
+        final List<MediaBrowser.MediaItem> mediaItems = new ArrayList<>();
         final String folder;
 
         if (!MEDIA_ID_ROOT.equals(parentMediaId)) {
@@ -359,30 +353,34 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
             folder = "/";
         }
 
-        mMusicProvider.getMusicByFolder(folder, MusicProvider.FLAG_SONG_METADATA_TEXT).map(mm -> {
+        mMusicProvider.getMusicByFolder(folder).map(mm -> {
 
             if (Boolean.parseBoolean(mm.getString(MusicProvider.CUSTOM_METADATA_IS_DIRECTORY))) {
 
                 String directoryPath = mm.getString(MusicProvider.CUSTOM_METADATA_DIRECTORY);
                 String directoryName = mm.getString(MusicProvider.CUSTOM_METADATA_FILENAME);
+                String browsableMediaID =
+                        createMediaID(null,
+                                (MEDIA_ID_ROOT + directoryPath + directoryName).split("/"));
 
-                return new MediaItem(new MediaDescription.Builder()
-                        .setMediaId(
-                                createMediaID(null,
-                                        (MEDIA_ID_ROOT + directoryPath + directoryName).split("/")))
-                        .setTitle(directoryName).build(), MediaItem.FLAG_BROWSABLE);
+                MediaMetadata trackCopy = new MediaMetadata.Builder(mm)
+                        .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, browsableMediaID)
+                        .build();
+
+                return new MediaItem(trackCopy.getDescription(), MediaItem.FLAG_BROWSABLE);
 
             } else {
 
                 String hierarchyAwareMediaID = createMediaID(
-                        mm.getDescription().getMediaId(), (MEDIA_ID_ROOT+folder).split("/"));
+                        mm.getDescription().getMediaId(), (MEDIA_ID_ROOT + folder).split("/"));
+
                 MediaMetadata trackCopy = new MediaMetadata.Builder(mm)
                         .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, hierarchyAwareMediaID)
                         .build();
 
                 return new MediaItem(trackCopy.getDescription(),
-                        MusicProvider.willBePlayable(this,trackCopy)?
-                                MediaItem.FLAG_PLAYABLE:0);
+                        MusicProvider.willBePlayable(this, trackCopy) ?
+                                MediaItem.FLAG_PLAYABLE : 0);
 
             }
 
@@ -410,8 +408,10 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                     mQueueSubscription.unsubscribe();
                 }
 
-                mQueueSubscription = QueueHelper.getRandomQueue(mMusicProvider)
+                mQueueSubscription = QueueHelper
+                        .getRandomQueue(mMusicProvider,getApplicationContext())
                         .subscribeOn(Schedulers.io())
+                        .observeOn(Schedulers.immediate())
                         .toList()
                         .subscribe(queue -> {
                             mPlayingQueue = queue;
@@ -419,12 +419,17 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                             mSession.setQueueTitle(getString(R.string.random_queue_title));
                             // start playing from the beginning of the queue
                             mCurrentIndexOnQueue = 0;
+
+                            if (mPlayingQueue != null && !mPlayingQueue.isEmpty()) {
+                                handlePlayRequest();
+                                mMusicProvider.preloadPlaylist(mPlayingQueue);
+                            }
                         });
+            } else {
+                handlePlayRequest();
+                mMusicProvider.preloadPlaylist(mPlayingQueue);
             }
 
-            if (mPlayingQueue != null && !mPlayingQueue.isEmpty()) {
-                handlePlayRequest();
-            }
         }
 
         @Override
@@ -458,16 +463,18 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                 mQueueSubscription.unsubscribe();
             }
 
-            mQueueSubscription = QueueHelper.getPlayingQueue(mediaId, mMusicProvider)
+            mQueueSubscription = QueueHelper
+                    .getPlayingQueue(mediaId, mMusicProvider, getApplicationContext())
                     .subscribeOn(Schedulers.io())
+                    .observeOn(Schedulers.immediate())
                     .toList()
                     .subscribe(queue -> {
                         mPlayingQueue = queue;
                         mSession.setQueue(mPlayingQueue);
 
                         // TODO Generalize for all categories
-                        String queueTitle = getString(R.string.browse_musics_by_genre_subtitle,
-                                MediaIDHelper.extractBrowseCategoryValueFromMediaID(mediaId));
+                        String queueTitle = getString(R.string.queue_title,
+                                TextUtils.join("/",MediaIDHelper.extractBrowseCategoryValueFromMediaID(mediaId)));
                         mSession.setQueueTitle(queueTitle);
 
                         if (mPlayingQueue != null && !mPlayingQueue.isEmpty()) {
@@ -480,6 +487,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                             } else {
                                 // play the music
                                 handlePlayRequest();
+                                mMusicProvider.preloadPlaylist(mPlayingQueue);
                             }
                         }
                     });
@@ -506,7 +514,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                 // first song.
                 mCurrentIndexOnQueue = 0;
             }
-            if (QueueHelper.isIndexPlayable(mCurrentIndexOnQueue, mPlayingQueue)) {
+            if (QueueHelper.isIndexValid(mCurrentIndexOnQueue, mPlayingQueue)) {
                 handlePlayRequest();
             } else {
                 LogHelper.e(TAG, "skipToNext: cannot skip to next. next Index=",
@@ -525,7 +533,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                 // first song.
                 mCurrentIndexOnQueue = 0;
             }
-            if (QueueHelper.isIndexPlayable(mCurrentIndexOnQueue, mPlayingQueue)) {
+            if (QueueHelper.isIndexValid(mCurrentIndexOnQueue, mPlayingQueue)) {
                 handlePlayRequest();
             } else {
                 LogHelper.e(TAG, "skipToPrevious: cannot skip to previous. previous Index=",
@@ -566,33 +574,33 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
             mMusicProvider
                     .init()
                     .subscribeOn(Schedulers.io())
-                    .doOnCompleted(() -> {
+                    .observeOn(Schedulers.immediate())
+                    .doOnCompleted(() ->
+                            QueueHelper
+                                    .getPlayingQueueFromSearch(
+                                            query, extras, mMusicProvider, getApplicationContext())
+                                    .subscribeOn(Schedulers.io())
+                                    .observeOn(Schedulers.immediate())
+                                    .toList()
+                                    .subscribe(
+                                            searchQueue -> {
+                                                mPlayingQueue = searchQueue;
 
-                        if (mQueueSubscription != null) {
-                            mQueueSubscription.unsubscribe();
-                        }
+                                                LogHelper.d(TAG, "playFromSearch  playqueue.length=", mPlayingQueue.size());
+                                                mSession.setQueue(mPlayingQueue);
+                                                mSession.setQueueTitle(getString(R.string.queue_title, query));
 
-                        mQueueSubscription = QueueHelper
-                                .getPlayingQueueFromSearch(query, extras, mMusicProvider)
-                                .subscribeOn(Schedulers.io())
-                                .toList()
-                                .subscribe(queue -> {
-                                    mPlayingQueue = queue;
+                                                if (mPlayingQueue != null && !mPlayingQueue.isEmpty()) {
+                                                    // immediately start playing from the beginning of the search results
+                                                    mCurrentIndexOnQueue = 0;
 
-                                    LogHelper.d(TAG, "playFromSearch  playqueue.length=", mPlayingQueue.size());
-                                    mSession.setQueue(mPlayingQueue);
-
-                                    if (mPlayingQueue != null && !mPlayingQueue.isEmpty()) {
-                                        // immediately start playing from the beginning of the search results
-                                        mCurrentIndexOnQueue = 0;
-
-                                        handlePlayRequest();
-                                    } else {
-                                        // if nothing was found, we need to warn the user and stop playing
-                                        handleStopRequest(getString(R.string.no_search_results));
-                                    }
-                                });
-                    })
+                                                    handlePlayRequest();
+                                                    mMusicProvider.preloadPlaylist(mPlayingQueue);
+                                                } else {
+                                                    // if nothing was found, we need to warn the user and stop playing
+                                                    handleStopRequest(getString(R.string.no_search_results));
+                                                }
+                                            }))
                     .subscribe();
         }
     }
@@ -617,7 +625,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
             mSession.setActive(true);
         }
 
-        if (QueueHelper.isIndexPlayable(mCurrentIndexOnQueue, mPlayingQueue)) {
+        if (QueueHelper.isIndexValid(mCurrentIndexOnQueue, mPlayingQueue)) {
             updateMetadata();
             mPlayback.play(mPlayingQueue.get(mCurrentIndexOnQueue));
         }
@@ -652,7 +660,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
     }
 
     private void updateMetadata() {
-        if (!QueueHelper.isIndexPlayable(mCurrentIndexOnQueue, mPlayingQueue)) {
+        if (!QueueHelper.isIndexValid(mCurrentIndexOnQueue, mPlayingQueue)) {
             LogHelper.e(TAG, "Can't retrieve current metadata.");
             updatePlaybackState(getResources().getString(R.string.error_no_metadata));
             return;
@@ -661,7 +669,10 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
         String musicId = MediaIDHelper.extractMusicIDFromMediaID(
                 queueItem.getDescription().getMediaId());
 
-        mMusicProvider.getMusic(musicId, MusicProvider.FLAG_SONG_METADATA_ALL).single()
+
+        mMusicProvider.getMusicMetadata(musicId)
+                .startWith(mMusicProvider.getMusic(musicId))
+                .debounce(500, TimeUnit.MILLISECONDS)
                 .subscribeOn(Schedulers.io())
                 .subscribe(track -> {
                     if (track == null) {
@@ -676,70 +687,22 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                                 " title from queueItem=", queueItem.getDescription().getTitle(),
                                 " mediaId from track=", track.getDescription().getMediaId(),
                                 " title from track=", track.getDescription().getTitle(),
-                                " source.hashcode from track=", track.getString(MusicProvider.CUSTOM_METADATA_TRACK_SOURCE).hashCode(),
+                                " source from track=", track.getString(MusicProvider.CUSTOM_METADATA_TRACK_SOURCE),
                                 e);
                         throw e;
                     }
                     LogHelper.d(TAG, "Updating metadata for MusicID= ", musicId);
 
-                    // TODO Implement thread-safe metadata update method
-                    mSession.setMetadata(track);
-
-
-                    // Set the proper album artwork on the media session, so it can be shown in the
-                    // locked screen and in other places.
-                    if (track.getDescription().getIconBitmap() == null &&
-                            track.getDescription().getIconUri() != null) {
-
-                        Bitmap bitmap = null;
-                        Bitmap icon = null;
-
-                        try {
-                            bitmap = Glide
-                                    .with(this)
-                                    .load(track)
-                                    .asBitmap()
-                                    .error(R.drawable.ic_album_art)
-                                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                                    .into(LARGE_ALBUM_ART_DIMENSIONS[0], LARGE_ALBUM_ART_DIMENSIONS[1])
-                                    .get();
-
-                            icon = Glide
-                                    .with(this)
-                                    .load(track)
-                                    .asBitmap()
-                                    .error(R.drawable.ic_album_art)
-                                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                                    .into(SMALL_ALBUM_ART_DIMENSIONS[0], SMALL_ALBUM_ART_DIMENSIONS[1])
-                                    .get();
-
-                        } catch (InterruptedException|ExecutionException e) {
-                            e.printStackTrace();
-                        }
-
-                        track = new MediaMetadata.Builder(track)
-
-                                // set high resolution bitmap in METADATA_KEY_ALBUM_ART. This is used, for
-                                // example, on the lockscreen background when the media session is active.
-                                .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, bitmap)
-
-                                        // set small version of the album art in the DISPLAY_ICON. This is used on
-                                        // the MediaDescription and thus it should be small to be serialized if
-                                        // necessary..
-                                .putBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON, icon)
-
-                                .build();
-
-                        mMusicProvider.updateMusic(trackId, track);
-
-                        // If we are still playing the same music
-                        String currentPlayingId = MediaIDHelper.extractMusicIDFromMediaID(
-                                queueItem.getDescription().getMediaId());
-                        if (trackId.equals(currentPlayingId)) {
-                            mSession.setMetadata(track);
-                        }
+                    // If we are still playing the same music
+                    String currentPlayingId =
+                            MediaIDHelper.extractMusicIDFromMediaID(
+                                    mPlayingQueue
+                                            .get(mCurrentIndexOnQueue)
+                                            .getDescription()
+                                            .getMediaId());
+                    if (trackId.equals(currentPlayingId)) {
+                        mSession.setMetadata(track);
                     }
-
                 });
     }
 
@@ -771,7 +734,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
         stateBuilder.setState(state, position, 1.0f, SystemClock.elapsedRealtime());
 
         // Set the activeQueueItemId if the current index is valid.
-        if (QueueHelper.isIndexPlayable(mCurrentIndexOnQueue, mPlayingQueue)) {
+        if (QueueHelper.isIndexValid(mCurrentIndexOnQueue, mPlayingQueue)) {
             MediaSession.QueueItem item = mPlayingQueue.get(mCurrentIndexOnQueue);
             stateBuilder.setActiveQueueItemId(item.getQueueId());
         }
@@ -827,13 +790,13 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
     // TODO Determine if method can be safely deleted
 
     private Observable<MediaMetadata> getCurrentPlayingMusic() {
-        if (QueueHelper.isIndexPlayable(mCurrentIndexOnQueue, mPlayingQueue)) {
+        if (QueueHelper.isIndexValid(mCurrentIndexOnQueue, mPlayingQueue)) {
             MediaSession.QueueItem item = mPlayingQueue.get(mCurrentIndexOnQueue);
             if (item != null) {
                 LogHelper.d(TAG, "getCurrentPlayingMusic for musicId=",
                         item.getDescription().getMediaId());
                 return mMusicProvider.getMusic(
-                        MediaIDHelper.extractMusicIDFromMediaID(item.getDescription().getMediaId()), MusicProvider.FLAG_SONG_PLAY_READY | MusicProvider.FLAG_SONG_METADATA_ALL);
+                        MediaIDHelper.extractMusicIDFromMediaID(item.getDescription().getMediaId()));
             }
         }
         return Observable.empty();
@@ -866,7 +829,14 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
 
     @Override
     public void onError(String error) {
-        updatePlaybackState(error);
+        if (mPlayingQueue != null && !mPlayingQueue.isEmpty()) {
+            if (!QueueHelper.isIndexValid(++mCurrentIndexOnQueue, mPlayingQueue)) {
+                updatePlaybackState(error);
+            } else {
+                handlePlayRequest();
+            }
+        }
+
     }
 
     @Override
@@ -878,7 +848,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
         }
 
         mQueueSubscription = QueueHelper
-                .getPlayingQueue(mediaId, mMusicProvider)
+                .getPlayingQueue(mediaId, mMusicProvider, getApplicationContext())
                 .subscribeOn(Schedulers.io())
                 .toList()
                 .subscribe(queue -> {
@@ -918,7 +888,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                 mPlayback.pause();
                 break;
             case PlaybackState.STATE_PLAYING:
-                if (resumePlaying && QueueHelper.isIndexPlayable(mCurrentIndexOnQueue, mPlayingQueue)) {
+                if (resumePlaying && QueueHelper.isIndexValid(mCurrentIndexOnQueue, mPlayingQueue)) {
                     mPlayback.play(mPlayingQueue.get(mCurrentIndexOnQueue));
                 } else if (!resumePlaying) {
                     mPlayback.pause();

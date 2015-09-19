@@ -72,6 +72,63 @@ public class DropboxDBHelper extends SQLiteOpenHelper {
                     "CONSTRAINT uq_entry_id UNIQUE ("+
                         Song.COLUMN_NAME_ENTRY_ID+"))";
 
+    private static final String CREATE_SONG_FTS4 =
+            "CREATE VIRTUAL TABLE " + Song.FTS4_TABLE_NAME + " " +
+                    "USING fts4(" +
+                        "content=\"" + Song.TABLE_NAME + "\", " +
+                            Song.COLUMN_NAME_GENRE + ", " +
+                            Song.COLUMN_NAME_ARTIST + ", " +
+                            Song.COLUMN_NAME_ALBUM + ", " +
+                            Song.COLUMN_NAME_TITLE + ")";
+
+    private static final String CREATE_SONG_BU_TRIGGER =
+            "CREATE TRIGGER song_bu " +
+                    "BEFORE UPDATE ON " + Song.TABLE_NAME + " "+
+                    "BEGIN\n" +
+                        "DELETE FROM " + Song.FTS4_TABLE_NAME + " WHERE docid=old.rowid;\n" +
+                    "END;";
+
+    private static final String CREATE_SONG_BD_TRIGGER =
+            "CREATE TRIGGER song_bd " +
+                    "BEFORE DELETE ON " + Song.TABLE_NAME + " " +
+                    "BEGIN\n" +
+                        "DELETE FROM " + Song.FTS4_TABLE_NAME + " WHERE docid=old.rowid;\n" +
+                    "END;";
+
+    private static final String CREATE_SONG_AU_TRIGGER =
+            "CREATE TRIGGER song_au " +
+                    "AFTER UPDATE ON " + Song.TABLE_NAME + " " +
+                    "BEGIN\n" +
+                        "INSERT INTO " + Song.FTS4_TABLE_NAME +
+                            "(docid, " +
+                            Song.COLUMN_NAME_GENRE + ", " +
+                            Song.COLUMN_NAME_ARTIST + ", " +
+                            Song.COLUMN_NAME_ALBUM + ", " +
+                            Song.COLUMN_NAME_TITLE + ") " +
+                        "VALUES(new.rowid, " +
+                            "new." + Song.COLUMN_NAME_GENRE + ", " +
+                            "new." + Song.COLUMN_NAME_ARTIST + ", " +
+                            "new." + Song.COLUMN_NAME_ALBUM + ", " +
+                            "new." + Song.COLUMN_NAME_TITLE + ");\n" +
+                    "END;";
+
+    private static final String CREATE_SONG_AI_TRIGGER =
+            "CREATE TRIGGER song_ai " +
+                    "AFTER INSERT ON " + Song.TABLE_NAME + " " +
+                    "BEGIN\n" +
+                        "INSERT INTO " + Song.FTS4_TABLE_NAME +
+                            "(docid, " +
+                            Song.COLUMN_NAME_GENRE + ", " +
+                            Song.COLUMN_NAME_ARTIST + ", " +
+                            Song.COLUMN_NAME_ALBUM + ", " +
+                            Song.COLUMN_NAME_TITLE + ") " +
+                        "VALUES(new.rowid, " +
+                            "new." + Song.COLUMN_NAME_GENRE + ", " +
+                            "new." + Song.COLUMN_NAME_ARTIST + ", " +
+                            "new." + Song.COLUMN_NAME_ALBUM + ", " +
+                            "new." + Song.COLUMN_NAME_TITLE + ");\n" +
+                    "END;";
+
     @Inject
     public DropboxDBHelper(Application app) {
         super(app.getApplicationContext(), DATABASE_NAME, null, DATABASE_VERSION);
@@ -81,7 +138,14 @@ public class DropboxDBHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
 
         db.execSQL(CREATE_ENTRY_TABLE);
+        db.execSQL(CREATE_PARENT_DIR_INDEX);
         db.execSQL(CREATE_SONG_TABLE);
+        db.execSQL(CREATE_SONG_FTS4);
+        db.execSQL(CREATE_SONG_BU_TRIGGER);
+        db.execSQL(CREATE_SONG_BD_TRIGGER);
+        db.execSQL(CREATE_SONG_AU_TRIGGER);
+        db.execSQL(CREATE_SONG_AI_TRIGGER);
+
     }
 
     @Override

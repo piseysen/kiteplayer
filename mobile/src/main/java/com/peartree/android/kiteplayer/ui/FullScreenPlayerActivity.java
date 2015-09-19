@@ -17,6 +17,7 @@ package com.peartree.android.kiteplayer.ui;
 
 import android.content.ComponentName;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.media.MediaDescription;
 import android.media.MediaMetadata;
@@ -272,12 +273,18 @@ public class FullScreenPlayerActivity extends ActionBarCastActivity {
 
         updateMediaDescription(mm.getDescription());
 
-        Glide
-                .with(this)
-                .load(mm)
-                .error(R.drawable.album_art)
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .into(mBackgroundImage);
+        Bitmap albumArt = mm.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART);
+
+        if (albumArt != null) {
+            mBackgroundImage.setImageBitmap(albumArt);
+        } else {
+            Glide
+                    .with(this)
+                    .load(mm)
+                    .error(R.drawable.album_art)
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .into(mBackgroundImage);
+        }
     }
 
     private void updateMediaDescription(MediaDescription description) {

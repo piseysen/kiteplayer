@@ -17,7 +17,6 @@ package com.peartree.android.kiteplayer.ui;
 
 import android.app.Activity;
 import android.app.Fragment;
-import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -25,23 +24,16 @@ import android.content.IntentFilter;
 import android.media.MediaMetadata;
 import android.media.browse.MediaBrowser;
 import android.media.session.MediaController;
-import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
-import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
-import android.support.design.widget.CoordinatorLayout;
-import android.support.design.widget.Snackbar;
-import android.support.v4.widget.ContentLoadingProgressBar;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.dropbox.client2.DropboxAPI;
@@ -302,7 +294,7 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
     @Override
     public void onRefresh() {
         mProvider
-                .init()
+                .refresh()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(

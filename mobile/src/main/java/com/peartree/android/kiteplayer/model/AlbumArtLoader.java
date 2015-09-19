@@ -22,7 +22,9 @@ import java.security.MessageDigest;
 
 import javax.inject.Inject;
 
+import rx.Observable;
 import rx.Subscription;
+import rx.schedulers.Schedulers;
 
 public class AlbumArtLoader implements StreamModelLoader<MediaMetadata> {
 
@@ -54,6 +56,7 @@ public class AlbumArtLoader implements StreamModelLoader<MediaMetadata> {
                 mSyncService
                         .getAlbumArt(mm)
                         .single()
+                        .subscribeOn(Schedulers.immediate())
                         .subscribe(byteArray -> {
                             try {
                                 os.write(byteArray);

@@ -141,12 +141,22 @@ public class DropboxDBEntry {
 
     public DropboxDBSong getSong() { return song; }
 
-    public void setSong(DropboxDBSong song) { this.song = song; }
+    public DropboxDBSong getOrCreateSong() {
+        if (song == null && !isDir) {
+            song = new DropboxDBSong();
+            song.setEntryId(id);
+        }
+        return song;
+    }
+
+    public void setSong(DropboxDBSong song) {
+        this.song = song;
+    }
 
     // Convenience method
 
     public String getFullPath() {
-        return parentDir+filename;
+        return parentDir + filename;
     }
 
     @Override
@@ -154,7 +164,7 @@ public class DropboxDBEntry {
         if (this == o) return true;
         if (!(o instanceof DropboxDBEntry)) return false;
 
-        return areEqual(this,(DropboxDBEntry)o);
+        return areEqual(this, (DropboxDBEntry) o);
 
     }
 

@@ -88,6 +88,9 @@ public class MusicPlayerActivity extends BaseActivity
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+
+        // TODO: Handle cases where activity is deeplinked to (e.g. voice search)
+
         super.onCreate(savedInstanceState);
         LogHelper.d(TAG, "Activity onCreate");
 

@@ -35,6 +35,7 @@ public class DropboxDBEntryDAO {
                 DropboxDBEntryMapper.toContentValues(entry),
                 SQLiteDatabase.CONFLICT_REPLACE);
 
+        entry.setId(id);
         LogHelper.d(TAG, "Inserted/Updated entry with id=", id, " and path=", entry.getFullPath());
 
         return id;

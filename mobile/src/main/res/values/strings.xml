@@ -19,7 +19,7 @@
     <string name="app_name">Kite Player</string>
     <string name="favorite">Favorite</string>
     <string name="error_no_metadata">Unable to retrieve metadata.</string>
-    <string name="browse_musics_by_genre_subtitle">%1$s songs</string>
+    <string name="queue_title">Playing: %1$s</string>
     <string name="browse_folders">Folders</string>
     <string name="browse_folder_subtitle">Songs by folder</string>
     <string name="random_queue_title">Random music</string>

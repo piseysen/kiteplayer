@@ -299,7 +299,6 @@ public class MediaNotificationManager extends BroadcastReceiver {
             Bitmap art = null;
             try {
 
-
                 art = Glide
                         .with(mService)
                         .load(mMetadata)

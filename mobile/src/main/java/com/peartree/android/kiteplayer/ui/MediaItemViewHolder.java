@@ -107,7 +107,7 @@ public class MediaItemViewHolder {
                     break;
                 case STATE_CLOSED_FOLDER:
                     holder.mImageView.setImageDrawable(
-                            activity.getDrawable(R.drawable.ic_folder_black_36dp));
+                            activity.getDrawable(R.drawable.ic_folder_grey_36dp));
                     holder.mImageView.setImageTintList(sColorStateNotPlaying);
                     holder.mImageView.setVisibility(View.VISIBLE);
                     break;
