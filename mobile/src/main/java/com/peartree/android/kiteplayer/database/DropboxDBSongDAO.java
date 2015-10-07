@@ -12,6 +12,8 @@ import com.peartree.android.kiteplayer.database.DropboxDBContract.Song;
 import com.peartree.android.kiteplayer.database.DropboxDBSongMapper.DropboxDBSongCursorWrapper;
 import com.peartree.android.kiteplayer.utils.LogHelper;
 
+import org.w3c.dom.Text;
+
 import java.net.MalformedURLException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -108,33 +110,39 @@ public class DropboxDBSongDAO {
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
         String selection = "";
+        ArrayList<String> selectionArgs = new ArrayList<>();
 
         if (genre != null) {
-            selection += Song.COLUMN_NAME_GENRE+" MATCH "+
-                    DatabaseUtils.sqlEscapeString(genre);
+            selection += Song.COLUMN_NAME_GENRE+" MATCH ?";
+            selectionArgs.add(genre);
         }
 
         if (artist != null) {
-            selection += !TextUtils.isEmpty(selection)?" AND ":"";
-            selection += Song.COLUMN_NAME_ARTIST+" MATCH "+
-                    DatabaseUtils.sqlEscapeString(artist);
+            selection += selectionArgs.size()>0?" AND ":"";
+            selection += Song.COLUMN_NAME_ARTIST+" MATCH ?";
+            selectionArgs.add(artist);
         }
 
         if (album != null) {
-            selection += !TextUtils.isEmpty(selection)?" AND ":"";
-            selection += Song.COLUMN_NAME_ALBUM+" MATCH "+
-                    DatabaseUtils.sqlEscapeString(album);
+            selection += selectionArgs.size()>0?" AND ":"";
+            selection += Song.COLUMN_NAME_ALBUM+" MATCH ?";
+            selectionArgs.add(album);
         }
 
         if (title != null) {
-            selection += !TextUtils.isEmpty(selection)?" AND ":"";
-            selection += Song.COLUMN_NAME_TITLE+" MATCH "+
-                    DatabaseUtils.sqlEscapeString(title);
+            selection += selectionArgs.size()>0?" AND ":"";
+            selection += Song.COLUMN_NAME_TITLE+" MATCH ?";
+            selectionArgs.add(title);
+        }
+
+        // No keywords provided. Match nothing.
+        if (TextUtils.isEmpty(selection)) {
+            return Observable.empty();
         }
 
         Cursor results = db.query(
                 true, Song.FTS4_TABLE_NAME, null,
-                selection, null,
+                selection, selectionArgs.toArray(new String[selectionArgs.size()]),
                 null, null, null, null);
 
         LogHelper.d(TAG,
@@ -151,11 +159,12 @@ public class DropboxDBSongDAO {
 
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
-        String selection = Song.FTS4_TABLE_NAME+" MATCH "+DatabaseUtils.sqlEscapeString(query);
+        String selection = Song.FTS4_TABLE_NAME+" MATCH ?";
+        String[] selectionArgs = new String[] {query};
 
         Cursor results =
                 db.query(true, Song.FTS4_TABLE_NAME, null,
-                        selection, null,
+                        selection, selectionArgs,
                         null, null, null, null);
 
         LogHelper.d(TAG,

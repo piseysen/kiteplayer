@@ -57,6 +57,8 @@ import rx.Subscription;
 import rx.schedulers.Schedulers;
 
 import static com.peartree.android.kiteplayer.utils.MediaIDHelper.MEDIA_ID_ROOT;
+import static com.peartree.android.kiteplayer.utils.MediaIDHelper.MEDIA_ID_MUSICS_BY_SEARCH;
+
 import static com.peartree.android.kiteplayer.utils.MediaIDHelper.createMediaID;
 import static com.peartree.android.kiteplayer.utils.MediaIDHelper.extractBrowseCategoryValueFromMediaID;
 
@@ -348,7 +350,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
         final String folder;
 
         if (!MEDIA_ID_ROOT.equals(parentMediaId)) {
-            folder = "/"+TextUtils.join("/",extractBrowseCategoryValueFromMediaID(parentMediaId));
+            folder = "/" + TextUtils.join("/", extractBrowseCategoryValueFromMediaID(parentMediaId));
         } else {
             folder = "/";
         }
@@ -409,7 +411,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                 }
 
                 mQueueSubscription = QueueHelper
-                        .getRandomQueue(mMusicProvider,getApplicationContext())
+                        .getRandomQueue(mMusicProvider, getApplicationContext())
                         .subscribeOn(Schedulers.io())
                         .observeOn(Schedulers.immediate())
                         .toList()

@@ -101,6 +101,27 @@ public class DropboxDBEntryDAO {
         return new DropboxDBEntryCursorWrapper(results).getObservable();
     }
 
+    public Observable<DropboxDBEntry> queryByFilenameKeyword(String query) {
+
+        LogHelper.d(TAG,"queryByFilenameKeyword - Query with: ",query);
+
+        SQLiteDatabase db = mDbHelper.getReadableDatabase();
+
+        String selection = DropboxDBContract.Entry.FTS4_TABLE_NAME+" MATCH ?";
+        String[] selectionArgs = new String[] {query};
+
+        Cursor results =
+                db.query(true, DropboxDBContract.Entry.FTS4_TABLE_NAME, null,
+                        selection, selectionArgs,
+                        null, null, null, null);
+
+        LogHelper.d(TAG,
+                "queryByFilenameKeyword - Query with term=",query,
+                " returned ",results.getCount()," matches.");
+
+        return new DropboxDBEntryMapper.DropboxDBEntryCursorWrapper(results).getObservable();
+    }
+
     public int deleteById(long id) {
 
         SQLiteDatabase db = mDbHelper.getWritableDatabase();

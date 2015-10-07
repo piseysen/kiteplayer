@@ -230,30 +230,26 @@ public class TvBrowseFragment extends BrowseFragment {
     }
 
     private void setupEventListeners() {
-        setOnItemViewClickedListener(new OnItemViewClickedListener() {
-            @Override
-            public void onItemClicked(Presenter.ViewHolder viewHolder, Object o,
-                                      RowPresenter.ViewHolder viewHolder2, Row row) {
-                if (o instanceof MediaItem) {
-                    MediaItem item = (MediaItem) o;
-                    if (item.isPlayable()) {
-                        LogHelper.w(TAG, "Ignoring click on PLAYABLE MediaItem in",
-                                "TvBrowseFragment. mediaId=", item.getMediaId());
-                        return;
-                    }
-                    Intent intent = new Intent(getActivity(), TvVerticalGridActivity.class);
-                    intent.putExtra(TvBrowseActivity.SAVED_MEDIA_ID, item.getMediaId());
-                    intent.putExtra(TvBrowseActivity.BROWSE_TITLE,
-                            item.getDescription().getTitle());
-                    startActivity(intent);
-
-                } else if (o instanceof MediaSession.QueueItem) {
-                    MediaSession.QueueItem item = (MediaSession.QueueItem) o;
-                    getActivity().getMediaController().getTransportControls()
-                            .skipToQueueItem(item.getQueueId());
-                    Intent intent = new Intent(getActivity(), TvPlaybackActivity.class);
-                    startActivity(intent);
+        setOnItemViewClickedListener((viewHolder, o, viewHolder2, row) -> {
+            if (o instanceof MediaItem) {
+                MediaItem item = (MediaItem) o;
+                if (item.isPlayable()) {
+                    LogHelper.w(TAG, "Ignoring click on PLAYABLE MediaItem in",
+                            "TvBrowseFragment. mediaId=", item.getMediaId());
+                    return;
                 }
+                Intent intent = new Intent(getActivity(), TvVerticalGridActivity.class);
+                intent.putExtra(TvBrowseActivity.SAVED_MEDIA_ID, item.getMediaId());
+                intent.putExtra(TvBrowseActivity.BROWSE_TITLE,
+                        item.getDescription().getTitle());
+                startActivity(intent);
+
+            } else if (o instanceof QueueItem) {
+                QueueItem item = (QueueItem) o;
+                getActivity().getMediaController().getTransportControls()
+                        .skipToQueueItem(item.getQueueId());
+                Intent intent = new Intent(getActivity(), TvPlaybackActivity.class);
+                startActivity(intent);
             }
         });
 

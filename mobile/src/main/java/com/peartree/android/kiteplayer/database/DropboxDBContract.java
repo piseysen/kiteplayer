@@ -10,6 +10,8 @@ public final class DropboxDBContract {
     public static abstract class Entry implements BaseColumns {
 
         public static final String TABLE_NAME = "entry";
+        public static final String FTS4_TABLE_NAME = "entry_fts4";
+
 
         public static final String COLUMN_NAME_IS_DIR = "is_dir";
         public static final String COLUMN_NAME_ROOT = "root";
@@ -32,6 +34,7 @@ public final class DropboxDBContract {
     public static abstract class Song implements BaseColumns {
 
         public static final String TABLE_NAME = "song";
+        public static final String FTS4_TABLE_NAME = "song_fts4";
 
         public static final String COLUMN_NAME_DOWNLOAD_URL = "download_url";
         public static final String COLUMN_NAME_DOWNLOAD_URL_EXPIRATION = "download_url_expiration";
@@ -49,7 +52,5 @@ public final class DropboxDBContract {
         public static final String COLUMN_NAME_TOTAL_TRACKS = "total_tracks";
 
         public static final String COLUMN_NAME_ENTRY_ID = "entry_id";
-
-        public static final String FTS4_TABLE_NAME = "song_fts4";
     }
 }

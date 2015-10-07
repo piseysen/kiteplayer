@@ -72,6 +72,52 @@ public class DropboxDBHelper extends SQLiteOpenHelper {
                     "CONSTRAINT uq_entry_id UNIQUE ("+
                         Song.COLUMN_NAME_ENTRY_ID+"))";
 
+    private static final String CREATE_ENTRY_FTS4 =
+            "CREATE VIRTUAL TABLE " + Entry.FTS4_TABLE_NAME + " " +
+                    "USING fts4(" +
+                    "content=\"" + Entry.COLUMN_NAME_PARENT_DIR + "\", " +
+                    Entry.COLUMN_NAME_FILENAME + ")";
+
+    private static final String CREATE_ENTRY_BU_TRIGGER =
+            "CREATE TRIGGER entry_bu " +
+                    "BEFORE UPDATE ON " + Entry.TABLE_NAME + " "+
+                    "BEGIN\n" +
+                        "DELETE FROM " + Entry.FTS4_TABLE_NAME + " WHERE docid=old.rowid;\n" +
+                    "END;";
+
+    private static final String CREATE_ENTRY_BD_TRIGGER =
+            "CREATE TRIGGER entry_bd " +
+                    "BEFORE DELETE ON " + Entry.TABLE_NAME + " " +
+                    "BEGIN\n" +
+                        "DELETE FROM " + Entry.FTS4_TABLE_NAME + " WHERE docid=old.rowid;\n" +
+                    "END;";
+
+    private static final String CREATE_ENTRY_AU_TRIGGER =
+            "CREATE TRIGGER entry_au " +
+                    "AFTER UPDATE ON " + Entry.TABLE_NAME + " " +
+                    "BEGIN\n" +
+                        "INSERT INTO " + Entry.FTS4_TABLE_NAME +
+                            "(docid, " +
+                                Entry.COLUMN_NAME_PARENT_DIR + ", " +
+                                Entry.COLUMN_NAME_FILENAME + ") " +
+                        "VALUES(new.rowid, " +
+                            "new." + Entry.COLUMN_NAME_PARENT_DIR + ", " +
+                            "new." + Entry.COLUMN_NAME_FILENAME + ");\n" +
+                    "END;";
+
+    private static final String CREATE_ENTRY_AI_TRIGGER =
+            "CREATE TRIGGER entry_ai " +
+                    "AFTER INSERT ON " + Entry.TABLE_NAME + " " +
+                    "BEGIN\n" +
+                        "INSERT INTO " + Entry.FTS4_TABLE_NAME +
+                            "(docid, " +
+                            Entry.COLUMN_NAME_PARENT_DIR + ", " +
+                            Entry.COLUMN_NAME_FILENAME + ") " +
+                        "VALUES(new.rowid, " +
+                            "new." + Entry.COLUMN_NAME_PARENT_DIR + ", " +
+                            "new." + Entry.COLUMN_NAME_FILENAME + ");\n" +
+                    "END;";
+
     private static final String CREATE_SONG_FTS4 =
             "CREATE VIRTUAL TABLE " + Song.FTS4_TABLE_NAME + " " +
                     "USING fts4(" +
@@ -139,6 +185,11 @@ public class DropboxDBHelper extends SQLiteOpenHelper {
 
         db.execSQL(CREATE_ENTRY_TABLE);
         db.execSQL(CREATE_PARENT_DIR_INDEX);
+        db.execSQL(CREATE_ENTRY_FTS4);
+        db.execSQL(CREATE_ENTRY_BU_TRIGGER);
+        db.execSQL(CREATE_ENTRY_BD_TRIGGER);
+        db.execSQL(CREATE_ENTRY_AU_TRIGGER);
+        db.execSQL(CREATE_ENTRY_AI_TRIGGER);
         db.execSQL(CREATE_SONG_TABLE);
         db.execSQL(CREATE_SONG_FTS4);
         db.execSQL(CREATE_SONG_BU_TRIGGER);

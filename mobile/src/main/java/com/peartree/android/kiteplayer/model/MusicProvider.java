@@ -224,14 +224,8 @@ public class MusicProvider {
     public Observable<MediaMetadata> getMusicByFolder(@NonNull String parentFolder) {
 
         // TODO Sort results
-        return mEntryDao
-                .findByParentDir(parentFolder)
-                .map(entry -> {
-                    if (!entry.isDir()) {
-                        entry.setSong(mSongDao.findByEntryId(entry.getId()));
-                    }
-                    return entry;
-                })
+        return completeWithSong(mEntryDao
+                .findByParentDir(parentFolder))
                 .flatMap(this::toMediaMetadata);
     }
 
@@ -239,27 +233,38 @@ public class MusicProvider {
 
         LogHelper.d(TAG,"searchMusicByVoiceParams - Search by params: ",params.toString());
 
+        Observable<MediaMetadata> songQueryResults;
+        Observable<MediaMetadata> entryQueryResults;
+
         if (params.isAny) {
-            return Observable.empty();
+            songQueryResults = Observable.empty();
         } else if (params.isUnstructured) {
-            return wrapInEntry(mSongDao.queryByKeyword(params.query));
+            songQueryResults =
+                    wrapInEntry(mSongDao.queryByKeyword(params.query))
+                            .flatMap(this::toMediaMetadata);
         } else {
-            return wrapInEntry(mSongDao.query(params.genre, params.artist, params.album, params.song));
+            songQueryResults = wrapInEntry(
+                    mSongDao.query(
+                            params.isGenreFocus?params.genre:null,
+                            params.isArtistFocus?params.artist:null,
+                            params.isAlbumFocus?params.album:null,
+                            params.isSongFocus?params.song:null))
+                    .flatMap(this::toMediaMetadata);
         }
+
+        entryQueryResults =
+                mEntryDao
+                        .queryByFilenameKeyword(params.query)
+                        .map(entry -> completeWithSong(entry))
+                        .flatMap(this::toMediaMetadata);
+
+        return songQueryResults.concatWith(entryQueryResults);
     }
 
     private Observable<DropboxDBEntry> getEntryWithSong(String musicId) {
 
-        return Observable.create(subscriber -> {
-            final DropboxDBEntry entry = mEntryDao.findById(Long.valueOf(musicId));
-            if (entry != null) {
-                if (!entry.isDir()) {
-                    entry.setSong(mSongDao.findByEntryId(entry.getId()));
-                }
-                subscriber.onNext(entry);
-            }
-            subscriber.onCompleted();
-        });
+        return completeWithSong(Observable
+                .just(mEntryDao.findById(Long.valueOf(musicId))));
 
     }
 
@@ -287,12 +292,26 @@ public class MusicProvider {
     }
 
     @NonNull
-    private Observable<MediaMetadata> wrapInEntry(Observable<DropboxDBSong> songs) {
+    private Observable<DropboxDBEntry> completeWithSong(Observable<DropboxDBEntry> entries) {
+        return entries.map(entry -> completeWithSong(entry));
+    }
+
+    private DropboxDBEntry completeWithSong(DropboxDBEntry entry) {
+        if (entry != null) {
+            if (!entry.isDir()) {
+                entry.setSong(mSongDao.findByEntryId(entry.getId()));
+            }
+        }
+        return entry;
+    }
+
+    @NonNull
+    private Observable<DropboxDBEntry> wrapInEntry(Observable<DropboxDBSong> songs) {
         return songs.map(song -> {
             DropboxDBEntry entry = mEntryDao.findById(song.getEntryId());
             entry.setSong(song);
             return entry;
-        }).flatMap(this::toMediaMetadata);
+        });
     }
 
     public static MediaMetadata buildMetadataFromDBEntry(Context ctx, DropboxDBEntry entry, @Nullable File cachedSongFile, boolean canStream) {
