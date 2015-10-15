@@ -174,7 +174,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
             mSessionExtras.putString(EXTRA_CONNECTED_CAST, mCastManager.getDeviceName());
             mSession.setExtras(mSessionExtras);
             // Now we can switch to CastPlayback
-            Playback playback = new CastPlayback(mMusicProvider);
+            Playback playback = new CastPlayback(mMusicProvider,getApplicationContext());
             mMediaRouter.setMediaSession(mSession);
             switchToPlayer(playback, true);
         }
@@ -474,7 +474,6 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                         mPlayingQueue = queue;
                         mSession.setQueue(mPlayingQueue);
 
-                        // TODO Generalize for all categories
                         String queueTitle = getString(R.string.queue_title,
                                 TextUtils.join("/",MediaIDHelper.extractBrowseCategoryValueFromMediaID(mediaId)));
                         mSession.setQueueTitle(queueTitle);
@@ -674,7 +673,8 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
 
         mMusicProvider.getMusicMetadata(musicId)
                 .startWith(mMusicProvider.getMusic(musicId))
-                .debounce(500, TimeUnit.MILLISECONDS)
+                .debounce(500,TimeUnit.MILLISECONDS)
+                .distinct()
                 .subscribeOn(Schedulers.io())
                 .subscribe(track -> {
                     if (track == null) {

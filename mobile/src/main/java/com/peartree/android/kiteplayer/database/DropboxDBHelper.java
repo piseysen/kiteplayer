@@ -75,7 +75,8 @@ public class DropboxDBHelper extends SQLiteOpenHelper {
     private static final String CREATE_ENTRY_FTS4 =
             "CREATE VIRTUAL TABLE " + Entry.FTS4_TABLE_NAME + " " +
                     "USING fts4(" +
-                    "content=\"" + Entry.COLUMN_NAME_PARENT_DIR + "\", " +
+                    "content=\"" + Entry.TABLE_NAME + "\"," +
+                    Entry.COLUMN_NAME_PARENT_DIR + ", " +
                     Entry.COLUMN_NAME_FILENAME + ")";
 
     private static final String CREATE_ENTRY_BU_TRIGGER =

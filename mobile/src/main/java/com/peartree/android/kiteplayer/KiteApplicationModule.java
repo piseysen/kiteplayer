@@ -20,6 +20,9 @@ import javax.inject.Singleton;
 import dagger.Module;
 import dagger.Provides;
 
+import static com.google.android.libraries.cast.companionlibrary.cast.BaseCastManager.FEATURE_DEBUGGING;
+import static com.google.android.libraries.cast.companionlibrary.cast.BaseCastManager.FEATURE_WIFI_RECONNECT;
+
 @Module
 public class KiteApplicationModule {
 
@@ -34,12 +37,6 @@ public class KiteApplicationModule {
     @Provides @Singleton
     Application provideApplication() {
         return mApplication;
-    }
-
-    @Provides @Singleton
-    VideoCastManager provideVideoCastManager() {
-        return VideoCastManager.initialize(
-                mApplicationContext, mApplicationContext.getResources().getString(R.string.cast_application_id), FullScreenPlayerActivity.class, null);
     }
 
     @Provides @Singleton

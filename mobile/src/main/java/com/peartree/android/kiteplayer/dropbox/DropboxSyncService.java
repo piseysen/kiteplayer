@@ -143,9 +143,12 @@ public class DropboxSyncService {
                         subscriber.onCompleted();
                         LogHelper.d(TAG, "synchronizeEntryDB - Finished successfully");
 
-                    } catch (DropboxException e) {
+                    } catch (Exception e) {
 
-                        DropboxHelper.unlinkSessionIfUnlinkedException(mDropboxApi.getSession(), e);
+                        if (e instanceof DropboxException) {
+                            DropboxHelper.unlinkSessionIfUnlinkedException(
+                                    mDropboxApi.getSession(), (DropboxException)e);
+                        }
 
                         subscriber.onError(e);
                         LogHelper.e(TAG, e, "synchronizeEntryDB - Finished with error");
@@ -187,7 +190,7 @@ public class DropboxSyncService {
         return entries.map(entry -> {
 
             if (entry.isDir()) {
-                throw new IllegalArgumentException("Entry="+entry.getFullPath()+"is not a song entry");
+                throw new IllegalArgumentException("Entry=" + entry.getFullPath() + "is not a song entry");
             }
 
             final DropboxDBSong song = entry.getOrCreateSong();
@@ -196,14 +199,13 @@ public class DropboxSyncService {
                 return entry;
             }
 
-            // TODO Revisit getOrCacheSongFile implementation
             File cachedSongFile = getCachedSongFile(entry);
             if (cachedSongFile == null) {
                 cachedSongFile = downloadSongDataIntoCache(entry);
             }
 
             final MediaMetadataRetriever retriever =
-                    initializeMediaMetadataRetriever(entry,cachedSongFile);
+                    initializeMediaMetadataRetriever(entry, cachedSongFile);
 
             if (retriever != null) {
 

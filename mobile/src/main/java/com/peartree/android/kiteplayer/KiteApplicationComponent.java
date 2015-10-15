@@ -28,7 +28,6 @@ public interface KiteApplicationComponent {
     void inject(MediaBrowserFragment fragment);
 
     Application application();
-    VideoCastManager videoCastManager();
     DropboxAPI<AndroidAuthSession> dropboxAPI();
     AlbumArtLoader albumArtLoader();
 

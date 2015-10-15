@@ -54,10 +54,6 @@ import rx.schedulers.Schedulers;
 import static com.peartree.android.kiteplayer.utils.SongCacheHelper.LARGE_ALBUM_ART_DIMENSIONS;
 import static com.peartree.android.kiteplayer.utils.SongCacheHelper.SMALL_ALBUM_ART_DIMENSIONS;
 
-/**
- * Utility class to get a list of MusicTrack's based on a server-side JSON
- * configuration.
- */
 @Singleton
 public class MusicProvider {
 
@@ -67,6 +63,8 @@ public class MusicProvider {
     public static final String CUSTOM_METADATA_FILENAME = "__FILENAME__";
     public static final String CUSTOM_METADATA_DIRECTORY = "__DIRECTORY__";
     public static final String CUSTOM_METADATA_IS_DIRECTORY = "__IS_DIRECTORY__";
+    public static final String CUSTOM_METADATA_MIMETYPE = "__MIMETYPE__";
+
 
     private final Context mApplicationContext;
 
@@ -183,7 +181,6 @@ public class MusicProvider {
                                 .with(mApplicationContext)
                                 .load(mm)
                                 .asBitmap()
-                                .error(R.drawable.ic_album_art)
                                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                                 .into(LARGE_ALBUM_ART_DIMENSIONS[0], LARGE_ALBUM_ART_DIMENSIONS[1])
                                 .get();
@@ -192,7 +189,6 @@ public class MusicProvider {
                                 .with(mApplicationContext)
                                 .load(mm)
                                 .asBitmap()
-                                .error(R.drawable.ic_album_art)
                                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                                 .into(SMALL_ALBUM_ART_DIMENSIONS[0], SMALL_ALBUM_ART_DIMENSIONS[1])
                                 .get();
@@ -349,7 +345,8 @@ public class MusicProvider {
                     .putString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE,
                             song.getTitle()!=null ? song.getTitle() : entry.getFilename())
                     .putString(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE,
-                            song.getAlbum() != null ? song.getAlbum() : entry.getParentDir());
+                            song.getAlbum() != null ? song.getAlbum() : entry.getParentDir())
+                    .putString(CUSTOM_METADATA_MIMETYPE,entry.getMimeType());
 
         } else if (entry.isDir()){
 

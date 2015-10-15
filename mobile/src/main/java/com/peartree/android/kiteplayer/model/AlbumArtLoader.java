@@ -144,13 +144,18 @@ public class AlbumArtLoader implements StreamModelLoader<MediaMetadata> {
 
         @Override
         public boolean equals(Object o) {
+
             if (this == o) return true;
-            if (!(o instanceof Key)) return false;
 
-            Key key = (Key) o;
+            if (o instanceof Key) {
+                Key key = (Key) o;
+                return signature.equals(key.signature);
+            } else if (o instanceof String) {
+                String signature = (String)o;
+                return this.signature.equals(signature);
+            }
 
-            return signature.equals(key.signature);
-
+            return false;
         }
 
         @Override
