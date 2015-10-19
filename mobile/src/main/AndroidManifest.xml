@@ -23,14 +23,21 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- Set android.software.leanback to false, so the APK will be available to both
-    TV and regular devices. -->
+    <!--
+    TEMPORARILY DISABLED UNTIL DROPBOX LOGIN ON TV IS FIXED
+    Code is in unknown state (never tested)
+    TODO: Fix Dropbox Login on TV, then test and fix everything else
+
+    Set android.software.leanback to false, so the APK will be available to both
+    TV and regular devices.
+
     <uses-feature
         android:name="android.software.leanback"
         android:required="false" />
     <uses-feature
         android:name="android.hardware.touchscreen"
         android:required="false" />
+        -->
 
     <application
         android:name=".KiteApplication"
@@ -47,6 +54,7 @@
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
 
+        <!-- Intro activity for the unauthenticated user -->
         <activity android:name="com.peartree.android.kiteplayer.ui.AuthActivity" android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -72,8 +80,6 @@
             android:label="@string/app_name">
         </activity>
 
-        <!-- Placeholder activity for phone UI -->
-
         <!-- Proxy activity that opens either the NowPlaying TV or the mobile UI, depending on
         the current environment -->
         <activity
@@ -81,7 +87,25 @@
             android:icon="@mipmap/ic_launcher">
         </activity>
 
-        <!-- Main activity for Android TV user interface -->
+        <!-- A full screen activity showing controls and a seek bar for
+             the current playing music -->
+        <activity
+            android:name="com.peartree.android.kiteplayer.ui.FullScreenPlayerActivity"
+            android:label="@string/app_name"
+            android:launchMode="singleTop"
+            android:parentActivityName="com.peartree.android.kiteplayer.ui.MusicPlayerActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.peartree.android.kiteplayer.ui.MusicPlayerActivity"/>
+        </activity>
+
+        <!--
+        TEMPORARILY DISABLED UNTIL DROPBOX LOGIN ON TV IS FIXED
+        Code is in unknown state (never tested)
+        TODO: Fix Dropbox Login on TV, then test and fix everything else
+
+        Main activity for Android TV user interface
+
         <activity
             android:name="com.peartree.android.kiteplayer.ui.tv.TvBrowseActivity"
             android:label="@string/app_name"
@@ -97,11 +121,11 @@
             android:theme="@style/Theme.KiteTV"
             android:parentActivityName="com.peartree.android.kiteplayer.ui.tv.TvBrowseActivity" />
 
-        <!-- Android TV UI when playing a song -->
         <activity
             android:name="com.peartree.android.kiteplayer.ui.tv.TvPlaybackActivity"
             android:theme="@style/Theme.KiteTV"
             android:parentActivityName="com.peartree.android.kiteplayer.ui.tv.TvBrowseActivity" />
+            -->
 
         <!--
              (OPTIONAL) use this meta data to indicate which icon should be
@@ -147,17 +171,6 @@
         <service
             android:name="com.google.android.libraries.cast.companionlibrary.cast.reconnection.ReconnectionService"/>
 
-        <!-- A full screen activity showing controls and a seek bar for
-             the current playing music -->
-        <activity
-            android:name="com.peartree.android.kiteplayer.ui.FullScreenPlayerActivity"
-            android:label="@string/app_name"
-            android:launchMode="singleTop"
-            android:parentActivityName="com.peartree.android.kiteplayer.ui.MusicPlayerActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.peartree.android.kiteplayer.ui.MusicPlayerActivity"/>
-        </activity>
 
         <!-- Dropbox login activity -->
         <activity
