@@ -469,7 +469,7 @@ public class CastPlayback implements Playback {
 
         private static final String TAG = LogHelper.makeLogTag(CachedDataServer.class);
         private static final String MIME_TYPE_PNG = "image/png";
-        private static final int[] IMAGE_SIZE_CAST = new int[]{400,400};
+        private static final int[] IMAGE_SIZE_CAST = new int[]{384,384};
 
         public static final String ALBUM_ART_PATH = "/albumart";
         public static final String SONG_FILE_PATH = "/songfile";
