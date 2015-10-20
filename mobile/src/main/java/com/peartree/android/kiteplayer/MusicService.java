@@ -491,6 +491,8 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                                 mMusicProvider.preloadPlaylist(mPlayingQueue);
                             }
                         }
+                    }, error -> {
+                        LogHelper.e(TAG,error,"onPlayFromMediaId - Unable to create queue");
                     });
         }
 
@@ -601,6 +603,8 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                                                     // if nothing was found, we need to warn the user and stop playing
                                                     handleStopRequest(getString(R.string.no_search_results));
                                                 }
+                                            }, error -> {
+                                                LogHelper.e(TAG,error,"onPlayFromSearch - Unable to create queue from search.");
                                             }))
                     .subscribe();
         }

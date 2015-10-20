@@ -92,7 +92,7 @@ public class DropboxDBSongMapper {
                 try {
 
                     if (this.isClosed()) {
-                        subscriber.onError(new IllegalStateException("Cursor already closed."));
+                        throw new IllegalStateException("Cursor already closed.");
                     }
 
                     if (this.getCount() > 0) {
@@ -100,13 +100,20 @@ public class DropboxDBSongMapper {
 
                         do {
                             subscriber.onNext(this.getSong());
-                        } while (this.moveToNext());
+                        } while (this.moveToNext() && !subscriber.isUnsubscribed());
 
                     }
 
+                    if (!subscriber.isUnsubscribed()) {
+                        subscriber.onCompleted();
+                    }
+
+                } catch (Exception e) {
+                    if (!subscriber.isUnsubscribed()) {
+                        subscriber.onError(e);
+                    }
                 } finally {
                     this.close();
-                    subscriber.onCompleted();
                 }
             });
         }
