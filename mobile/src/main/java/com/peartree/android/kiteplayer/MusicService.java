@@ -696,14 +696,19 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                     LogHelper.d(TAG, "Updating metadata for MusicID= ", musicId);
 
                     // If we are still playing the same music
-                    String currentPlayingId =
-                            MediaIDHelper.extractMusicIDFromMediaID(
-                                    mPlayingQueue
-                                            .get(mCurrentIndexOnQueue)
-                                            .getDescription()
-                                            .getMediaId());
-                    if (trackId.equals(currentPlayingId)) {
-                        mSession.setMetadata(track);
+                    synchronized (mPlayingQueue) {
+                        String currentPlayingId =
+                                QueueHelper.isIndexValid(mCurrentIndexOnQueue, mPlayingQueue) ?
+                                        MediaIDHelper.extractMusicIDFromMediaID(
+                                                mPlayingQueue
+                                                        .get(mCurrentIndexOnQueue)
+                                                        .getDescription()
+                                                        .getMediaId()) :
+                                        null;
+
+                        if (trackId.equals(currentPlayingId)) {
+                            mSession.setMetadata(track);
+                        }
                     }
                 });
     }

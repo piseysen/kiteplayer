@@ -42,10 +42,12 @@ public class NetworkHelper {
     }
 
     public static boolean canStream(Context context) {
-        return !isNetworkMetered(context) || PrefUtils.isStreamingOverCellularAllowed(context);
+        return isOnline(context) &&
+                (PrefUtils.isStreamingOverCellularAllowed(context) || !isNetworkMetered(context));
     }
 
     public static boolean canSync(Context context) {
-        return !isNetworkMetered(context) || PrefUtils.isSyncOverCellularAllowed(context);
+        return isOnline(context) &&
+                (PrefUtils.isSyncOverCellularAllowed(context) || !isNetworkMetered(context));
     }
 }
