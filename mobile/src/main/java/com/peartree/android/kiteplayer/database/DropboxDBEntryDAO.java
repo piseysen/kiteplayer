@@ -107,13 +107,17 @@ public class DropboxDBEntryDAO {
 
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
-        String selection = DropboxDBContract.Entry.FTS4_TABLE_NAME+" MATCH ?";
+        String selection = DropboxDBContract.Entry.FTS4_TABLE_NAME+" MATCH ? AND " +
+                "NOT "+Entry.COLUMN_NAME_IS_DIR;
         String[] selectionArgs = new String[] {query};
 
-        Cursor results =
-                db.query(true, DropboxDBContract.Entry.FTS4_TABLE_NAME, null,
-                        selection, selectionArgs,
-                        null, null, null, null);
+        Cursor results = db.rawQuery(
+                "SELECT e.* " +
+                        "FROM "+Entry.TABLE_NAME+" AS e " +
+                        "INNER JOIN "+Entry.FTS4_TABLE_NAME+" AS ei " +
+                        "ON e.rowid = ei.docid " +
+                        "WHERE "+selection,
+                selectionArgs);
 
         LogHelper.d(TAG,
                 "queryByFilenameKeyword - Query with term=",query,

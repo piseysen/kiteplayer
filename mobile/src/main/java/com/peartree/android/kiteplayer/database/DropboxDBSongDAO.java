@@ -113,25 +113,25 @@ public class DropboxDBSongDAO {
         ArrayList<String> selectionArgs = new ArrayList<>();
 
         if (genre != null) {
-            selection += Song.COLUMN_NAME_GENRE+" MATCH ?";
+            selection += "si."+Song.COLUMN_NAME_GENRE+" MATCH ?";
             selectionArgs.add(genre);
         }
 
         if (artist != null) {
             selection += selectionArgs.size()>0?" AND ":"";
-            selection += Song.COLUMN_NAME_ARTIST+" MATCH ?";
+            selection += "si."+Song.COLUMN_NAME_ARTIST+" MATCH ?";
             selectionArgs.add(artist);
         }
 
         if (album != null) {
             selection += selectionArgs.size()>0?" AND ":"";
-            selection += Song.COLUMN_NAME_ALBUM+" MATCH ?";
+            selection += "si."+Song.COLUMN_NAME_ALBUM+" MATCH ?";
             selectionArgs.add(album);
         }
 
         if (title != null) {
             selection += selectionArgs.size()>0?" AND ":"";
-            selection += Song.COLUMN_NAME_TITLE+" MATCH ?";
+            selection += "si."+Song.COLUMN_NAME_TITLE+" MATCH ?";
             selectionArgs.add(title);
         }
 
@@ -140,10 +140,12 @@ public class DropboxDBSongDAO {
             return Observable.empty();
         }
 
-        Cursor results = db.query(
-                true, Song.FTS4_TABLE_NAME, null,
-                selection, selectionArgs.toArray(new String[selectionArgs.size()]),
-                null, null, null, null);
+        Cursor results = db.rawQuery(
+                "SELECT s.* FROM "+Song.TABLE_NAME+" AS s " +
+                        "INNER JOIN "+Song.FTS4_TABLE_NAME+" AS si " +
+                        "ON s.rowid = si.docid " +
+                        "WHERE "+selection,
+                selectionArgs.toArray(new String[selectionArgs.size()]));
 
         LogHelper.d(TAG,
                 "query - Query with genre=",genre,
@@ -162,10 +164,12 @@ public class DropboxDBSongDAO {
         String selection = Song.FTS4_TABLE_NAME+" MATCH ?";
         String[] selectionArgs = new String[] {query};
 
-        Cursor results =
-                db.query(true, Song.FTS4_TABLE_NAME, null,
-                        selection, selectionArgs,
-                        null, null, null, null);
+        Cursor results = db.rawQuery(
+                "SELECT s.* FROM "+Song.TABLE_NAME+" AS s " +
+                        "INNER JOIN "+Song.FTS4_TABLE_NAME+" AS si " +
+                        "ON s.rowid = si.docid " +
+                        "WHERE "+selection,
+                selectionArgs);
 
         LogHelper.d(TAG,
                 "queryByKeyword - Query with term=",query,

@@ -1,6 +1,7 @@
 package com.peartree.android.kiteplayer;
 
 import android.app.Application;
+import android.os.Build;
 
 import com.facebook.stetho.Stetho;
 import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
@@ -36,7 +37,9 @@ public class KiteApplication extends Application {
 
         mCastManager.enableFeatures(FEATURE_WIFI_RECONNECT | FEATURE_DEBUGGING);
 
-        Stetho.initializeWithDefaults(this);
+        if (BuildConfig.DEBUG) {
+            Stetho.initializeWithDefaults(this);
+        }
 
     }
 

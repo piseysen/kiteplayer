@@ -254,7 +254,10 @@ public class MusicProvider {
                         .map(entry -> completeWithSong(entry))
                         .flatMap(this::toMediaMetadata);
 
-        return songQueryResults.concatWith(entryQueryResults);
+        return songQueryResults
+                .concatWith(entryQueryResults)
+                .distinct()
+                .onBackpressureBuffer();
     }
 
     private Observable<DropboxDBEntry> getEntryWithSong(String musicId) {
