@@ -153,43 +153,41 @@ public class MusicPlayerActivity extends BaseActivity
     @Override
     public void checkForUserVisibleErrors(boolean forceError) {
 
+        MediaController controller = this.getMediaController();
+
         boolean showError = forceError;
         CharSequence snackbarMessage = getText(R.string.error_loading_media);
         int snackbarDuration = Snackbar.LENGTH_LONG;
 
-        // If offline, message is about the lack of connectivity:
         if (!NetworkHelper.isOnline(this)) {
+            // If offline, message is about the lack of connectivity
 
             snackbarMessage = getText(R.string.error_no_connection);
             snackbarDuration = Snackbar.LENGTH_INDEFINITE;
             showError = true;
 
-            // If unable to stream, message is about settings
+        } else if (controller != null
+                && controller.getMetadata() != null
+                && controller.getPlaybackState() != null
+                && controller.getPlaybackState().getState() == PlaybackState.STATE_ERROR
+                && controller.getPlaybackState().getErrorMessage() != null) {
+
+            // If state is ERROR and metadata!=null, use playback state error message:
+
+            snackbarMessage = controller.getPlaybackState().getErrorMessage();
+            snackbarDuration = Snackbar.LENGTH_LONG;
+            showError = true;
+        } else if (forceError) {
+            // If the caller requested to show error, show a generic message
+
+            showError = true;
         } else if (!NetworkHelper.canStream(this)) {
+            // If unable to stream, message is about settings
 
             snackbarMessage = getText(R.string.error_no_streaming);
             snackbarDuration = Snackbar.LENGTH_INDEFINITE;
             showError = true;
 
-        } else {
-
-            // otherwise, if state is ERROR and metadata!=null, use playback state error message:
-            MediaController controller = this.getMediaController();
-            if (controller != null
-                    && controller.getMetadata() != null
-                    && controller.getPlaybackState() != null
-                    && controller.getPlaybackState().getState() == PlaybackState.STATE_ERROR
-                    && controller.getPlaybackState().getErrorMessage() != null) {
-
-                snackbarMessage = controller.getPlaybackState().getErrorMessage();
-                snackbarDuration = Snackbar.LENGTH_LONG;
-                showError = true;
-
-            } else if (forceError) {
-
-                // Finally, if the caller requested to show error, show a generic message:
-                showError = true;
-            }
         }
 
         if (showError && (mSnackbarError == null || !mSnackbarError.isShown())) {

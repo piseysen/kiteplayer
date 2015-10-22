@@ -78,4 +78,7 @@
     <string name="pref_cellular_stream">Stream Over Cellular</string>
     <string name="pref_cellular_stream_summary">When enabled, this will allow the app to download songs over the cellular network for playing when not connected to a wifi network. \nRecommended setting: OFF</string>
     <string name="error_no_streaming">Streaming over cellular is OFF</string>
+    <string name="nosongs_title">No songs found</string>
+    <string name="nosong_instructions">Upload your music to Dropbox \nthen refresh to access them here.</string>
+    <string name="nosong_refresh">Refresh</string>
 </resources>

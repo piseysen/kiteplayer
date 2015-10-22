@@ -33,6 +33,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -71,6 +72,9 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
     private BrowseAdapter mBrowserAdapter;
     private String mMediaId;
     private MediaFragmentListener mMediaFragmentListener;
+
+    private View mNoSongsMessage;
+    private Button mNoSongsRefreshButton;
     private SwipeRefreshLayout mSwipeLayout;
 
     @Inject
@@ -134,13 +138,17 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
                     if (children.isEmpty() && DropboxHelper.isUnlinked(mDBApi.getSession())) {
                         mMediaFragmentListener.onDropboxSessionUnlinked();
                     } else {
-                        mMediaFragmentListener.checkForUserVisibleErrors(children.isEmpty());
                         mBrowserAdapter.clear();
                         mBrowserAdapter.addAll(children);
                         mBrowserAdapter.notifyDataSetChanged();
+
+                        mNoSongsMessage.setVisibility(children.isEmpty()?View.VISIBLE:View.GONE);
                     }
+                    mMediaFragmentListener.checkForUserVisibleErrors(false);
+
                 } catch (Throwable t) {
                     LogHelper.e(TAG, t, "Error on childrenloaded");
+                    mMediaFragmentListener.checkForUserVisibleErrors(true);
                 } finally {
                     mSwipeLayout.setRefreshing(false);
                 }
@@ -151,8 +159,6 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
                 LogHelper.e(TAG, "browse fragment subscription onError, id=", id);
 
                 mSwipeLayout.setRefreshing(false);
-
-                Toast.makeText(getActivity(), R.string.error_loading_media, Toast.LENGTH_LONG).show();
                 mMediaFragmentListener.checkForUserVisibleErrors(true);
             }
         };
@@ -179,6 +185,13 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
         mSwipeLayout.setOnRefreshListener(this);
         mSwipeLayout.setColorSchemeResources(R.color.app_accent);
         mSwipeLayout.post(() -> mSwipeLayout.setRefreshing(true));
+
+        mNoSongsMessage = rootView.findViewById(R.id.nosong_message_layout);
+        mNoSongsRefreshButton = (Button) rootView.findViewById(R.id.nosong_refresh_button);
+        mNoSongsRefreshButton.setOnClickListener(view -> {
+            mSwipeLayout.setRefreshing(true);
+            onRefresh();
+        });
 
         mBrowserAdapter = new BrowseAdapter(getActivity());
 

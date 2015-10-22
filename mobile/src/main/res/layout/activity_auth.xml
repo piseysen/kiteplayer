@@ -20,7 +20,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/welcom_title"
-            android:textAppearance="?attr/textAppearanceDisplay2"
+            android:textAppearance="?attr/textAppearanceHeadline"
             android:textColor="?android:attr/textColorPrimaryInverse"
             android:gravity="center"/>
 
