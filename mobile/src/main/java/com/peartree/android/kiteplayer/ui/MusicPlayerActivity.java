@@ -190,7 +190,7 @@ public class MusicPlayerActivity extends BaseActivity
 
         }
 
-        if (showError && (mSnackbarError == null || !mSnackbarError.isShown())) {
+        if (showError) {
 
             if (mSnackbarError == null) {
                 mSnackbarError = Snackbar.make(mCoordinatorLayout,snackbarMessage,snackbarDuration);

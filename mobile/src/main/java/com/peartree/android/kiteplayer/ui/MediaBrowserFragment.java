@@ -84,21 +84,19 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
     MusicProvider mProvider;
 
     private final BroadcastReceiver mConnectivityChangeReceiver = new BroadcastReceiver() {
-        private boolean oldOnline = false;
+        private int oldOnline = -1;
         @Override
         public void onReceive(Context context, Intent intent) {
-            // We don't care about network changes while this fragment is not associated
-            // with a media ID (for example, while it is being initialized)
-            if (mMediaId != null) {
-                boolean isOnline = NetworkHelper.isOnline(context);
-                if (isOnline != oldOnline) {
-                    oldOnline = isOnline;
-                    mMediaFragmentListener.checkForUserVisibleErrors(false);
-                    if (isOnline) {
-                        mBrowserAdapter.notifyDataSetChanged();
-                    }
+
+            int isOnline = NetworkHelper.isOnline(context)?1:0;
+            if (isOnline != oldOnline) {
+                oldOnline = isOnline;
+                mMediaFragmentListener.checkForUserVisibleErrors(false);
+                if (isOnline == 1) {
+                    mBrowserAdapter.notifyDataSetChanged();
                 }
             }
+
         }
     };
 
