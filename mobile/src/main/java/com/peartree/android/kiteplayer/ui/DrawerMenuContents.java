@@ -22,6 +22,7 @@ import android.os.Bundle;
 
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
+import com.peartree.android.kiteplayer.MusicService;
 import com.peartree.android.kiteplayer.R;
 import com.peartree.android.kiteplayer.utils.PrefUtils;
 
@@ -63,8 +64,8 @@ public class DrawerMenuContents {
         activities[2] = AuthActivity.class;
         actions[2] = () -> {
             mDBApi.getSession().unlink();
-            PrefUtils.setDropboxAuthToken(mParentActivity,null);
-            // TODO Delete user data
+            PrefUtils.setDropboxAuthToken(mParentActivity, null);
+            mParentActivity.stopService(new Intent(mParentActivity, MusicService.class));
             replaceParentActivity(2);
         };
         items.add(populateDrawerItem(mParentActivity.getString(R.string.drawer_signout),R.drawable.ic_exit_to_app_black_24dp));
