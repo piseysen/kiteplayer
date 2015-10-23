@@ -36,6 +36,11 @@ import com.peartree.android.kiteplayer.utils.LogHelper;
 import com.peartree.android.kiteplayer.utils.NetworkHelper;
 
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 
 /**
@@ -50,6 +55,10 @@ public class MusicPlayerActivity extends BaseActivity
     private static final String TAG = LogHelper.makeLogTag(MusicPlayerActivity.class);
     private static final String SAVED_MEDIA_ID="com.peartree.android.kiteplayer.MEDIA_ID";
     private static final String FRAGMENT_TAG = "kite_list_container";
+
+    private enum ErrorType {
+        NO_CONNECTION, PLAYER_ERROR, NO_STREAMING, OTHER
+    }
 
     public static final String EXTRA_START_FULLSCREEN =
             "com.peartree.android.kiteplayer.EXTRA_START_FULLSCREEN";
@@ -155,16 +164,18 @@ public class MusicPlayerActivity extends BaseActivity
 
         MediaController controller = this.getMediaController();
 
-        boolean showError = forceError;
-        CharSequence snackbarMessage = getText(R.string.error_loading_media);
-        int snackbarDuration = Snackbar.LENGTH_LONG;
+        Callable<Snackbar> newSnackbar = null;
+        ErrorType userVisibleError = null;
 
         if (!NetworkHelper.isOnline(this)) {
+
             // If offline, message is about the lack of connectivity
 
-            snackbarMessage = getText(R.string.error_no_connection);
-            snackbarDuration = Snackbar.LENGTH_INDEFINITE;
-            showError = true;
+            userVisibleError = ErrorType.NO_CONNECTION;
+            newSnackbar = () -> Snackbar.make(
+                    mCoordinatorLayout,
+                    getText(R.string.error_no_connection),
+                    Snackbar.LENGTH_INDEFINITE);
 
         } else if (controller != null
                 && controller.getMetadata() != null
@@ -172,43 +183,70 @@ public class MusicPlayerActivity extends BaseActivity
                 && controller.getPlaybackState().getState() == PlaybackState.STATE_ERROR
                 && controller.getPlaybackState().getErrorMessage() != null) {
 
-            // If state is ERROR and metadata!=null, use playback state error message:
+            // If state is ERROR and metadata!=null, use playback state error message
 
-            snackbarMessage = controller.getPlaybackState().getErrorMessage();
-            snackbarDuration = Snackbar.LENGTH_LONG;
-            showError = true;
+            userVisibleError = ErrorType.PLAYER_ERROR;
+            newSnackbar = () -> Snackbar.make(
+                    mCoordinatorLayout,
+                    controller.getPlaybackState().getErrorMessage(),
+                    Snackbar.LENGTH_LONG);
+
+
         } else if (forceError) {
+
             // If the caller requested to show error, show a generic message
+            userVisibleError = ErrorType.OTHER;
+            newSnackbar = () -> Snackbar.make(
+                    mCoordinatorLayout,
+                    getText(R.string.error_loading_media),
+                    Snackbar.LENGTH_LONG);
 
-            showError = true;
         } else if (!NetworkHelper.canStream(this)) {
+
             // If unable to stream, message is about settings
+            userVisibleError = ErrorType.NO_STREAMING;
+            newSnackbar = () -> {
 
-            snackbarMessage = getText(R.string.error_no_streaming);
-            snackbarDuration = Snackbar.LENGTH_INDEFINITE;
-            showError = true;
+                Snackbar sb = Snackbar.make(
+                        mCoordinatorLayout,
+                        getText(R.string.error_no_streaming),
+                        Snackbar.LENGTH_INDEFINITE);
 
+                sb.setAction(R.string.settings, v -> {
+                    Bundle extras = ActivityOptions
+                            .makeCustomAnimation(this, R.anim.fade_in, R.anim.fade_out)
+                            .toBundle();
+
+                    startActivity(new Intent(this, SettingsActivity.class), extras);
+                    finish();
+
+                });
+
+                return sb;
+            };
         }
 
-        if (showError) {
+        // Dismiss current error message if no longer needed or replaced with different error
+        if (mSnackbarError != null &&
+                (userVisibleError == null ||
+                        mSnackbarError.getView().getTag() != userVisibleError)) {
+            mSnackbarError.dismiss();
+            mSnackbarError = null;
+        }
 
-            if (mSnackbarError == null) {
-                mSnackbarError = Snackbar.make(mCoordinatorLayout,snackbarMessage,snackbarDuration);
-            } else {
-                mSnackbarError.setText(snackbarMessage);
-                mSnackbarError.setDuration(snackbarDuration);
-            }
-
-            mSnackbarError.show();
-        } else if (!showError) {
-            if (mSnackbarError != null) {
-                mSnackbarError.dismiss();
+        // Display new error
+        if (userVisibleError != null && newSnackbar != null && mSnackbarError == null) {
+            try {
+                mSnackbarError = newSnackbar.call();
+                mSnackbarError.getView().setTag(userVisibleError);
+                mSnackbarError.show();
+            } catch (Exception e) { // Should never happen
+                LogHelper.e(TAG,e,"checkForUserVisibleErrors - Failed to make snackbar.");
             }
         }
 
         LogHelper.d(TAG, "checkForUserVisibleErrors. forceError=", forceError,
-                " showError=", showError,
-                " isOnline=", NetworkHelper.isOnline(this));
+                " userVisibleError=", userVisibleError);
     }
 
     @Override
