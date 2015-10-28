@@ -97,10 +97,10 @@ public class MusicPlayerActivity extends BaseActivity
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
-        // TODO: Handle cases where activity is deeplinked to (e.g. voice search)
-
         super.onCreate(savedInstanceState);
         LogHelper.d(TAG, "Activity onCreate");
+
+        setVoiceSearchParamsIfNeeded(getIntent());
 
         setContentView(R.layout.activity_player);
         mCoordinatorLayout = (CoordinatorLayout) findViewById(R.id.coordinatorlayout);
@@ -262,7 +262,7 @@ public class MusicPlayerActivity extends BaseActivity
     @Override
     protected void onNewIntent(Intent intent) {
         LogHelper.d(TAG, "onNewIntent, intent=", intent);
-        initializeFromParams(null, intent);
+        setVoiceSearchParamsIfNeeded(intent);
         startFullScreenActivityIfNeeded(intent);
     }
 
@@ -279,16 +279,6 @@ public class MusicPlayerActivity extends BaseActivity
 
     protected void initializeFromParams(Bundle savedInstanceState, Intent intent) {
 
-        // check if we were started from a "Play XYZ" voice search. If so, we save the extras
-        // (which contain the query details) in a parameter, so we can reuse it later, when the
-        // MediaSession is connected.
-        if (intent.getAction() != null
-            && intent.getAction().equals(MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH)) {
-            mVoiceSearchParams = intent.getExtras();
-            LogHelper.d(TAG, "Starting from voice search query=",
-                mVoiceSearchParams.getString(SearchManager.QUERY));
-        }
-
         navigateToBrowser(null);
 
         String savedMediaId = PrefUtils.getLatestMediaId(this);
@@ -302,6 +292,18 @@ public class MusicPlayerActivity extends BaseActivity
         }
 
         getFragmentManager().executePendingTransactions();
+    }
+
+    private void setVoiceSearchParamsIfNeeded(Intent intent) {
+        // check if we were started from a "Play XYZ" voice search. If so, we save the extras
+        // (which contain the query details) in a parameter, so we can reuse it later, when the
+        // MediaSession is connected.
+        if (intent.getAction() != null
+            && intent.getAction().equals(MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH)) {
+            mVoiceSearchParams = intent.getExtras();
+            LogHelper.d(TAG, "Starting from voice search query=",
+                    mVoiceSearchParams.getString(SearchManager.QUERY));
+        }
     }
 
     @Override
