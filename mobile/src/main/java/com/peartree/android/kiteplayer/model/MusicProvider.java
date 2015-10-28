@@ -219,7 +219,6 @@ public class MusicProvider {
      */
     public Observable<MediaMetadata> getMusicByFolder(@NonNull String parentFolder) {
 
-        // TODO Sort results
         return completeWithSong(mEntryDao
                 .findByParentDir(parentFolder))
                 .flatMap(this::toMediaMetadata);
