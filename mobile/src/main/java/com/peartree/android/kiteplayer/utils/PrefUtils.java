@@ -31,6 +31,7 @@ public class PrefUtils {
     private static final String DROPBOX_AUTH_TOKEN = "db_token";
     private static final String DROPBOX_DELTA_CURSOR = "db_delta_cursor";
     private static final String DROPBOX_UID = "db_uid";
+    private static final String LATEST_MEDIA_ID_BROWSED = "latest_media_id";
 
     public static SharedPreferences getPreferences(Context context) {
         return context.getSharedPreferences(PREF_NAMESPACE, Context.MODE_PRIVATE);
@@ -66,6 +67,14 @@ public class PrefUtils {
 
     public static long getDropboxUserId(Context context) {
         return getPreferences(context).getLong(DROPBOX_UID, -1);
+    }
+
+    public static void setLatestMediaId(Context context, String mediaId) {
+        getPreferences(context).edit().putString(LATEST_MEDIA_ID_BROWSED, mediaId).apply();
+    }
+
+    public static String getLatestMediaId(Context context) {
+        return getPreferences(context).getString(LATEST_MEDIA_ID_BROWSED, null);
     }
 
     // From settings activity

@@ -156,7 +156,7 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
     };
 
     private final FragmentManager.OnBackStackChangedListener mBackStackChangedListener =
-            ActionBarCastActivity.this::updateDrawerToggle;
+            this::updateDrawerToggle;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -255,6 +255,7 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
         }
         // Otherwise, it may return to the previous fragment stack
         FragmentManager fragmentManager = getFragmentManager();
+
         if (fragmentManager.getBackStackEntryCount() > 0) {
             fragmentManager.popBackStack();
         } else {
@@ -360,6 +361,7 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
         if (mDrawerToggle == null) {
             return;
         }
+
         boolean isRoot = getFragmentManager().getBackStackEntryCount() == 0;
         mDrawerToggle.setDrawerIndicatorEnabled(isRoot);
         if (getSupportActionBar() != null) {

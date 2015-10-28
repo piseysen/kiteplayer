@@ -16,6 +16,7 @@
 package com.peartree.android.kiteplayer.ui;
 
 import android.app.ActivityOptions;
+import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.app.SearchManager;
 import android.content.Intent;
@@ -33,14 +34,12 @@ import android.text.TextUtils;
 
 import com.peartree.android.kiteplayer.R;
 import com.peartree.android.kiteplayer.utils.LogHelper;
+import com.peartree.android.kiteplayer.utils.MediaIDHelper;
 import com.peartree.android.kiteplayer.utils.NetworkHelper;
+import com.peartree.android.kiteplayer.utils.PrefUtils;
 
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 
 /**
@@ -106,14 +105,20 @@ public class MusicPlayerActivity extends BaseActivity
         setContentView(R.layout.activity_player);
         mCoordinatorLayout = (CoordinatorLayout) findViewById(R.id.coordinatorlayout);
 
-        initializeToolbar();
         initializeFromParams(savedInstanceState, getIntent());
+        initializeToolbar();
 
         // Only check if a full screen player is needed on the first time:
         if (savedInstanceState == null) {
             startFullScreenActivityIfNeeded(getIntent());
         }
 
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        PrefUtils.setLatestMediaId(this, getMediaId());
     }
 
     @Override
@@ -273,7 +278,7 @@ public class MusicPlayerActivity extends BaseActivity
     }
 
     protected void initializeFromParams(Bundle savedInstanceState, Intent intent) {
-        String mediaId = null;
+
         // check if we were started from a "Play XYZ" voice search. If so, we save the extras
         // (which contain the query details) in a parameter, so we can reuse it later, when the
         // MediaSession is connected.
@@ -282,13 +287,44 @@ public class MusicPlayerActivity extends BaseActivity
             mVoiceSearchParams = intent.getExtras();
             LogHelper.d(TAG, "Starting from voice search query=",
                 mVoiceSearchParams.getString(SearchManager.QUERY));
-        } else {
-            if (savedInstanceState != null) {
-                // If there is a saved media ID, use it
-                mediaId = savedInstanceState.getString(SAVED_MEDIA_ID);
-            }
         }
-        navigateToBrowser(mediaId);
+
+        navigateToBrowser(null);
+
+        String savedMediaId = PrefUtils.getLatestMediaId(this);
+        if (savedInstanceState != null) {
+            // If there is a saved media ID, use it
+            savedMediaId = savedInstanceState.getString(SAVED_MEDIA_ID);
+        }
+
+        if (savedMediaId != null) {
+            navigateToBrowser(savedMediaId);
+        }
+
+        getFragmentManager().executePendingTransactions();
+    }
+
+    @Override
+    public void onBackPressed() {
+
+        String mediaId = getMediaId();
+        String parentMediaId =
+                mediaId != null?
+                MediaIDHelper.getParentMediaID(mediaId):null;
+
+        FragmentManager fragmentManager = getFragmentManager();
+
+        // If a fragment is the last in the back stack, but the hierarchical media ID indicates that
+        // its parent isn't the root, then a new fragment needs to be created to give the user the
+        // perception that he/she is navigating up the media hierarchy.
+        if (fragmentManager.getBackStackEntryCount() == 1 &&
+                parentMediaId != null &&
+                !parentMediaId.equals(MediaIDHelper.MEDIA_ID_ROOT)) {
+            fragmentManager.popBackStack();
+            navigateToBrowser(parentMediaId);
+        } else {
+            super.onBackPressed();
+        }
     }
 
     private void navigateToBrowser(String mediaId) {
