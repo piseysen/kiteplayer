@@ -279,19 +279,21 @@ public class MusicPlayerActivity extends BaseActivity
 
     protected void initializeFromParams(Bundle savedInstanceState, Intent intent) {
 
-        navigateToBrowser(null);
+        // Will synthesize a new backstack for the browse fragment if starting fresh
+        // Essentially starting up the app at the last visited media ID
 
-        String savedMediaId = PrefUtils.getLatestMediaId(this);
-        if (savedInstanceState != null) {
-            // If there is a saved media ID, use it
-            savedMediaId = savedInstanceState.getString(SAVED_MEDIA_ID);
+        if (savedInstanceState == null) {
+
+            // Prime fragment stack to ensure that drawer toggle will work correctly
+            navigateToBrowser(null);
+
+            String savedMediaId = PrefUtils.getLatestMediaId(this);
+            if (savedMediaId != null) {
+                navigateToBrowser(savedMediaId); // Deeplink to last visited media ID
+            }
+
+            getFragmentManager().executePendingTransactions();
         }
-
-        if (savedMediaId != null) {
-            navigateToBrowser(savedMediaId);
-        }
-
-        getFragmentManager().executePendingTransactions();
     }
 
     private void setVoiceSearchParamsIfNeeded(Intent intent) {
