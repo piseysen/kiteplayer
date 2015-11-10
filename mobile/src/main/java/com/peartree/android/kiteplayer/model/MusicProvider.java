@@ -335,20 +335,27 @@ public class MusicProvider {
                 builder.putString(CUSTOM_METADATA_TRACK_SOURCE, song.getDownloadURL().toString());
             }
 
+            String displayTitle =
+                    song.getTitle()!=null ? song.getTitle() : entry.getFilename();
+            String displaySubtitle =
+                    song.getAlbum() != null ? song.getAlbum() : entry.getParentDir();
+
             builder
-                    .putString(MediaMetadata.METADATA_KEY_ALBUM, song.getAlbum())
+                    .putString(MediaMetadata.METADATA_KEY_TITLE,
+                            // Found to be necessary for metadata display over bluetooth
+                            song.getTitle() != null ? song.getTitle() : displayTitle)
+                    .putString(MediaMetadata.METADATA_KEY_ALBUM,
+                            // Found to be necessary for metadata display over bluetooth
+                            song.getAlbum() != null ? song.getAlbum() : displaySubtitle)
                     .putString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST, song.getAlbumArtist())
                     .putString(MediaMetadata.METADATA_KEY_ARTIST, song.getArtist())
                     .putLong(MediaMetadata.METADATA_KEY_DURATION, song.getDuration())
                     .putString(MediaMetadata.METADATA_KEY_GENRE, song.getGenre())
-                    .putString(MediaMetadata.METADATA_KEY_TITLE, song.getTitle())
                     .putLong(MediaMetadata.METADATA_KEY_TRACK_NUMBER, song.getTrackNumber())
                     .putLong(MediaMetadata.METADATA_KEY_NUM_TRACKS, song.getTotalTracks())
-                    .putString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE,
-                            song.getTitle()!=null ? song.getTitle() : entry.getFilename())
-                    .putString(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE,
-                            song.getAlbum() != null ? song.getAlbum() : entry.getParentDir())
-                    .putString(CUSTOM_METADATA_MIMETYPE,entry.getMimeType());
+                    .putString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE, displayTitle)
+                    .putString(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE, displaySubtitle)
+                    .putString(CUSTOM_METADATA_MIMETYPE, entry.getMimeType());
 
         } else if (entry.isDir()){
 
