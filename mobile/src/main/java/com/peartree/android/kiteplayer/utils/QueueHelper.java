@@ -29,14 +29,10 @@ import android.media.MediaMetadata;
 import android.media.session.MediaSession;
 import android.media.session.MediaSession.QueueItem;
 import android.os.Bundle;
-import android.text.TextUtils;
 
 import com.peartree.android.kiteplayer.VoiceSearchParams;
 import com.peartree.android.kiteplayer.model.MusicProvider;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import rx.Observable;
@@ -67,17 +63,20 @@ public class QueueHelper {
         LogHelper.d(TAG, "Creating playing queue for ", categoryType, ",  ", categories);
 
         Observable<MediaMetadata> mmObservable;
-        if (categoryType.equals(MEDIA_ID_MUSICS_BY_SEARCH)) {
-            // TODO Test (Oddball case related to cast)
-            mmObservable = musicProvider.searchMusicByVoiceParams(
-                    new VoiceSearchParams(categories[0],new Bundle()));
-        } else if (categoryType.equals(MEDIA_ID_ROOT)) {
-            String folder = DropboxHelper.makeDropboxPath(null,categories);
-            mmObservable = musicProvider
-                    .getMusicByFolder(folder);
-        } else {
-            LogHelper.e(TAG, "Unrecognized category type: ", categoryType, " for media ", mediaId);
-            return null;
+        switch (categoryType) {
+            case MEDIA_ID_MUSICS_BY_SEARCH:
+                // TODO Test (Oddball case related to cast)
+                mmObservable = musicProvider.searchMusicByVoiceParams(
+                        new VoiceSearchParams(categories[0], new Bundle()));
+                break;
+            case MEDIA_ID_ROOT:
+                String folder = DropboxHelper.makeDropboxPath(null, categories);
+                mmObservable = musicProvider
+                        .getMusicByFolder(folder);
+                break;
+            default:
+                LogHelper.e(TAG, "Unrecognized category type: ", categoryType, " for media ", mediaId);
+                return null;
         }
 
         return mmObservable
@@ -165,10 +164,9 @@ public class QueueHelper {
 
         // We don't expect queues to change after created, so we use the item index as the
         // queueId. Any other number unique in the queue would work.
-        QueueItem item = new QueueItem(
-                trackCopy.getDescription(), index);
 
-        return item;
+        return new QueueItem(
+                trackCopy.getDescription(), index);
     }
 
     /**
@@ -183,7 +181,7 @@ public class QueueHelper {
 
 
         return mmObservable
-                .filter(mm -> MusicProvider.willBePlayable(ctx,mm))
+                .filter(mm -> MusicProvider.willBePlayable(ctx, mm))
                 .zipWith(mIndexSequence, (mm, index) ->
                         convertToQueueItem(
                                 mm, index, MEDIA_ID_MUSICS_BY_SEARCH, new String[]{"random"}));

@@ -41,7 +41,6 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
@@ -80,7 +79,6 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
     private MediaFragmentListener mMediaFragmentListener;
 
     private View mNoSongsMessage;
-    private Button mNoSongsRefreshButton;
     private SwipeRefreshLayout mSwipeLayout;
 
     @Inject
@@ -191,7 +189,7 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
         mSwipeLayout.post(() -> mSwipeLayout.setRefreshing(true));
 
         mNoSongsMessage = rootView.findViewById(R.id.nosong_message_layout);
-        mNoSongsRefreshButton = (Button) rootView.findViewById(R.id.nosong_refresh_button);
+        Button mNoSongsRefreshButton = (Button) rootView.findViewById(R.id.nosong_refresh_button);
         mNoSongsRefreshButton.setOnClickListener(view -> {
             mSwipeLayout.setRefreshing(true);
             onRefresh();
@@ -308,6 +306,7 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
 
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void onRefresh() {
         mProvider
@@ -336,7 +335,7 @@ public class MediaBrowserFragment extends Fragment implements SwipeRefreshLayout
     private static class BrowseAdapter extends ArrayAdapter<MediaBrowser.MediaItem> {
 
         public BrowseAdapter(Activity context) {
-            super(context, R.layout.media_list_item, new ArrayList<MediaBrowser.MediaItem>());
+            super(context, R.layout.media_list_item, new ArrayList<>());
         }
 
         @Override

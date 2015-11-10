@@ -114,31 +114,29 @@ public class TvPlaybackFragment extends android.support.v17.leanback.app.Playbac
         playbackControlsRowPresenter = new PlaybackControlsRowPresenter(
                 new DescriptionPresenter());
 
-        playbackControlsRowPresenter.setOnActionClickedListener(new OnActionClickedListener() {
-            public void onActionClicked(Action action) {
-                if (getActivity() == null || getActivity().getMediaController() == null) {
-                    return;
+        playbackControlsRowPresenter.setOnActionClickedListener(action -> {
+            if (getActivity() == null || getActivity().getMediaController() == null) {
+                return;
+            }
+            MediaController.TransportControls controls = getActivity()
+                    .getMediaController().getTransportControls();
+            if (action.getId() == mPlayPauseAction.getId()) {
+                if (mPlayPauseAction.getIndex() == PlayPauseAction.PLAY) {
+                    controls.play();
+                } else {
+                    controls.pause();
                 }
-                MediaController.TransportControls controls = getActivity()
-                        .getMediaController().getTransportControls();
-                if (action.getId() == mPlayPauseAction.getId()) {
-                    if (mPlayPauseAction.getIndex() == PlayPauseAction.PLAY) {
-                        controls.play();
-                    } else {
-                        controls.pause();
-                    }
-                } else if (action.getId() == mSkipNextAction.getId()) {
-                    controls.skipToNext();
-                    resetPlaybackRow();
-                } else if (action.getId() == mSkipPreviousAction.getId()) {
-                    controls.skipToPrevious();
-                    resetPlaybackRow();
-                }
+            } else if (action.getId() == mSkipNextAction.getId()) {
+                controls.skipToNext();
+                resetPlaybackRow();
+            } else if (action.getId() == mSkipPreviousAction.getId()) {
+                controls.skipToPrevious();
+                resetPlaybackRow();
+            }
 
-                if (action instanceof PlaybackControlsRow.MultiAction) {
-                    ((PlaybackControlsRow.MultiAction) action).nextIndex();
-                    notifyChanged(action);
-                }
+            if (action instanceof PlaybackControlsRow.MultiAction) {
+                ((PlaybackControlsRow.MultiAction) action).nextIndex();
+                notifyChanged(action);
             }
         });
 

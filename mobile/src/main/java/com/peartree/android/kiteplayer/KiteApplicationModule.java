@@ -17,8 +17,6 @@ import android.support.annotation.Nullable;
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.session.AppKeyPair;
-import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
-import com.peartree.android.kiteplayer.ui.FullScreenPlayerActivity;
 import com.peartree.android.kiteplayer.utils.ImmutableFileLRUCache;
 import com.peartree.android.kiteplayer.utils.PrefUtils;
 import com.squareup.okhttp.OkHttpClient;
@@ -30,14 +28,11 @@ import javax.inject.Singleton;
 import dagger.Module;
 import dagger.Provides;
 
-import static com.google.android.libraries.cast.companionlibrary.cast.BaseCastManager.FEATURE_DEBUGGING;
-import static com.google.android.libraries.cast.companionlibrary.cast.BaseCastManager.FEATURE_WIFI_RECONNECT;
-
 @Module
 public class KiteApplicationModule {
 
-    private KiteApplication mApplication;
-    private Context mApplicationContext;
+    private final KiteApplication mApplication;
+    private final Context mApplicationContext;
 
     public KiteApplicationModule(KiteApplication application) {
         mApplication = application;

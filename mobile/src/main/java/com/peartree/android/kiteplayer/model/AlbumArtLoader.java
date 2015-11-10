@@ -30,7 +30,6 @@ import java.security.MessageDigest;
 
 import javax.inject.Inject;
 
-import rx.Observable;
 import rx.Subscription;
 import rx.schedulers.Schedulers;
 
@@ -38,7 +37,7 @@ public class AlbumArtLoader implements StreamModelLoader<MediaMetadata> {
 
     private static final String TAG = LogHelper.makeLogTag(AlbumArtLoader.class);
 
-    private DropboxSyncService mSyncService;
+    private final DropboxSyncService mSyncService;
 
     @Inject
     public AlbumArtLoader(DropboxSyncService syncService) {

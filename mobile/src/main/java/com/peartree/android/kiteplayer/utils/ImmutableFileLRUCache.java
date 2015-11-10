@@ -125,7 +125,7 @@ public class ImmutableFileLRUCache {
 
     private void startCleanupRoutine() {
 
-        File parentDir = new File(mParentDirPath);
+        @SuppressWarnings("ConstantConditions") File parentDir = new File(mParentDirPath);
         File[] cachedFiles = parentDir.listFiles();
 
         long cummDirSize = 0;

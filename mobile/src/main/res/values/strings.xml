@@ -54,7 +54,7 @@
     <string name="loading">Loading…</string>
     <string name="media_route_menu_title">Play on…</string>
 
-    <string name="progress_queueing">Queueing songs...</string>
+    <string name="progress_queueing">Queueing songs…</string>
     <string name="unlinked_session_title">Dropbox Authentication</string>
     <string name="unlinked_session_message">Your Dropbox authentication is no longer valid. \nPlease sign in again.</string>
     <string name="unlinked_session_positive">Sign in with Dropbox</string>

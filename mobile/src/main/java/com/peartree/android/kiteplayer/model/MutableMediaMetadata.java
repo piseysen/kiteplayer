@@ -31,7 +31,7 @@ import android.text.TextUtils;
  */
 public class MutableMediaMetadata {
 
-    public MediaMetadata metadata;
+    public final MediaMetadata metadata;
     public final String trackId;
 
     public MutableMediaMetadata(String trackId, MediaMetadata metadata) {

@@ -21,9 +21,7 @@
  */
 package com.peartree.android.kiteplayer.ui;
 
-import android.app.ActivityManager;
 import android.content.ComponentName;
-import android.graphics.BitmapFactory;
 import android.media.MediaMetadata;
 import android.media.browse.MediaBrowser;
 import android.media.session.MediaController;
@@ -35,8 +33,6 @@ import android.support.annotation.NonNull;
 import com.peartree.android.kiteplayer.MusicService;
 import com.peartree.android.kiteplayer.R;
 import com.peartree.android.kiteplayer.utils.LogHelper;
-import com.peartree.android.kiteplayer.utils.NetworkHelper;
-import com.peartree.android.kiteplayer.utils.ResourceHelper;
 
 /**
  * Base activity for activities that need to show a playback control fragment when media is playing.

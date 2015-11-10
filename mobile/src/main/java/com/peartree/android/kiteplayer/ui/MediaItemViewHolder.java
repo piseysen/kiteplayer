@@ -28,7 +28,6 @@ import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.drawable.AnimationDrawable;
 import android.media.MediaDescription;
-import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -115,7 +114,7 @@ public class MediaItemViewHolder {
                     break;
                 case STATE_CLOSED_FOLDER:
                     holder.mImageView.setImageDrawable(
-                            activity.getDrawable(R.drawable.ic_folder_grey_36dp));
+                            activity.getDrawable(R.drawable.ic_folder_grey_52dp));
                     holder.mImageView.setImageTintList(sColorStateNotPlaying);
                     holder.mImageView.setVisibility(View.VISIBLE);
                     break;

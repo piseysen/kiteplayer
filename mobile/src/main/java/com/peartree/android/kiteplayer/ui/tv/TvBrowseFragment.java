@@ -21,7 +21,6 @@ import android.media.MediaMetadata;
 import android.media.browse.MediaBrowser;
 import android.media.browse.MediaBrowser.MediaItem;
 import android.media.session.MediaController;
-import android.media.session.MediaSession;
 import android.media.session.MediaSession.QueueItem;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -30,10 +29,6 @@ import android.support.v17.leanback.widget.ArrayObjectAdapter;
 import android.support.v17.leanback.widget.HeaderItem;
 import android.support.v17.leanback.widget.ListRow;
 import android.support.v17.leanback.widget.ListRowPresenter;
-import android.support.v17.leanback.widget.OnItemViewClickedListener;
-import android.support.v17.leanback.widget.Presenter;
-import android.support.v17.leanback.widget.Row;
-import android.support.v17.leanback.widget.RowPresenter;
 import android.view.View;
 
 import com.peartree.android.kiteplayer.R;
@@ -253,13 +248,10 @@ public class TvBrowseFragment extends BrowseFragment {
             }
         });
 
-        setOnSearchClickedListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                LogHelper.d(TAG, "In-app search");
-                Intent intent = new Intent(getActivity(), TvBrowseActivity.class);
-                startActivity(intent);
-            }
+        setOnSearchClickedListener(view -> {
+            LogHelper.d(TAG, "In-app search");
+            Intent intent = new Intent(getActivity(), TvBrowseActivity.class);
+            startActivity(intent);
         });
     }
 

@@ -10,17 +10,13 @@ package com.peartree.android.kiteplayer.database;
 
 
 import android.database.Cursor;
-import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.peartree.android.kiteplayer.database.DropboxDBContract.Song;
 import com.peartree.android.kiteplayer.database.DropboxDBSongMapper.DropboxDBSongCursorWrapper;
 import com.peartree.android.kiteplayer.utils.LogHelper;
-
-import org.w3c.dom.Text;
 
 import java.net.MalformedURLException;
 import java.text.ParseException;
@@ -35,7 +31,7 @@ import rx.Observable;
 public class DropboxDBSongDAO {
 
     private static final String TAG = LogHelper.makeLogTag(DropboxDBSongDAO.class);
-    private DropboxDBHelper mDbHelper;
+    private final DropboxDBHelper mDbHelper;
 
     @Inject
     public DropboxDBSongDAO(DropboxDBHelper dbHelper) {
@@ -56,7 +52,7 @@ public class DropboxDBSongDAO {
         return id;
     }
 
-    public DropboxDBSong findById(long id) throws MalformedURLException, ParseException {
+    public DropboxDBSong findById(long id) {
 
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
 

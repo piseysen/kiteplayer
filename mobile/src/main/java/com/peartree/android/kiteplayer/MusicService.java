@@ -55,13 +55,13 @@ import com.peartree.android.kiteplayer.utils.WearHelper;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import rx.Observable;
 import rx.Subscription;
 import rx.schedulers.Schedulers;
 
@@ -148,7 +148,8 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
     // Song catalog manager
     private MediaSession mSession;
     // "Now playing" queue:
-    private List<MediaSession.QueueItem> mPlayingQueue;
+    private final List<MediaSession.QueueItem> mPlayingQueue =
+            Collections.synchronizedList(new ArrayList<>());
     private int mCurrentIndexOnQueue;
     private MediaNotificationManager mMediaNotificationManager;
     // Indicates whether the service was started.
@@ -206,8 +207,6 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
         // Dependency injection
         ((KiteApplication)getApplication()).getComponent().inject(this);
 
-
-        mPlayingQueue = new ArrayList<>();
         mPackageValidator = new PackageValidator(this);
 
         // Start a new MediaSession
@@ -328,6 +327,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
 
         if (!mMusicProvider.isInitialized()) {
 
+            //noinspection unchecked,unchecked
             mMusicProvider
                     .init()
                     .subscribeOn(Schedulers.io())
@@ -357,6 +357,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                 .makeDropboxPath(null,
                         MediaIDHelper.extractBrowseCategoryValueFromMediaID(parentMediaId));
 
+        //noinspection unchecked
         mMusicProvider.getMusicByFolder(folder).map(mm -> {
 
             if (Boolean.parseBoolean(mm.getString(MusicProvider.CUSTOM_METADATA_IS_DIRECTORY))) {
@@ -390,7 +391,7 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
         })
                 .subscribeOn(Schedulers.io())
                 .subscribe(
-                        mediaItem -> mediaItems.add(mediaItem),
+                        mediaItems::add,
                         error -> result.sendResult(Collections.EMPTY_LIST),
                         () -> {
                             LogHelper.d(TAG, "OnLoadChildren sending ", mediaItems.size(),
@@ -416,7 +417,8 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                         .observeOn(Schedulers.immediate())
                         .toList()
                         .subscribe(queue -> {
-                            mPlayingQueue = queue;
+                            mPlayingQueue.clear();
+                            mPlayingQueue.addAll(queue);
                             mSession.setQueue(mPlayingQueue);
                             mSession.setQueueTitle(getString(R.string.random_queue_title));
                             // start playing from the beginning of the queue
@@ -465,13 +467,21 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                 mQueueSubscription.unsubscribe();
             }
 
-            mQueueSubscription = QueueHelper
-                    .getPlayingQueue(mediaId, mMusicProvider, getApplicationContext())
+            Observable<MediaSession.QueueItem> queueObservable = QueueHelper
+                    .getPlayingQueue(mediaId, mMusicProvider, getApplicationContext());
+
+            if (queueObservable == null) {
+                LogHelper.e(TAG,"onPlayFromMediaId - Null queue produced for mediaId=",mediaId);
+                return;
+            }
+
+            mQueueSubscription = queueObservable
                     .subscribeOn(Schedulers.io())
                     .observeOn(Schedulers.immediate())
                     .toList()
                     .subscribe(queue -> {
-                        mPlayingQueue = queue;
+                        mPlayingQueue.clear();
+                        mPlayingQueue.addAll(queue);
                         mSession.setQueue(mPlayingQueue);
 
                         String queueTitle = getString(R.string.queue_title,
@@ -571,7 +581,8 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                                     .toList()
                                     .subscribe(
                                             searchQueue -> {
-                                                mPlayingQueue = searchQueue;
+                                                mPlayingQueue.clear();
+                                                mPlayingQueue.addAll(searchQueue);
 
                                                 LogHelper.d(TAG, "playFromSearch  playqueue.length=", mPlayingQueue.size());
                                                 mSession.setQueue(mPlayingQueue);
@@ -803,15 +814,23 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
             mQueueSubscription.unsubscribe();
         }
 
-        mQueueSubscription = QueueHelper
-                .getPlayingQueue(mediaId, mMusicProvider, getApplicationContext())
+        Observable<MediaSession.QueueItem> queueObservable = QueueHelper
+                .getPlayingQueue(mediaId, mMusicProvider, getApplicationContext());
+
+        if (queueObservable == null) {
+            LogHelper.e(TAG, "onMetadataChanged - Null queue produced for mediaId=", mediaId);
+            return;
+        }
+
+        mQueueSubscription = queueObservable
                 .subscribeOn(Schedulers.io())
                 .toList()
                 .subscribe(queue -> {
                     int index = QueueHelper.getMusicIndexOnQueue(queue, mediaId);
                     if (index > -1) {
                         mCurrentIndexOnQueue = index;
-                        mPlayingQueue = queue;
+                        mPlayingQueue.clear();
+                        mPlayingQueue.addAll(queue);
                         updateMetadata();
                     }
                 });

@@ -38,8 +38,6 @@ import com.peartree.android.kiteplayer.model.MusicProvider;
 import com.peartree.android.kiteplayer.utils.LogHelper;
 import com.peartree.android.kiteplayer.utils.MediaIDHelper;
 
-import java.io.IOException;
-
 import rx.schedulers.Schedulers;
 
 import static android.media.MediaPlayer.OnCompletionListener;

@@ -58,15 +58,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.nio.ByteOrder;
-import java.security.Provider;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -76,8 +73,6 @@ import rx.exceptions.OnErrorThrowable;
 import rx.schedulers.Schedulers;
 
 import static android.media.session.MediaSession.QueueItem;
-import static com.peartree.android.kiteplayer.utils.SongCacheHelper.LARGE_ALBUM_ART_DIMENSIONS;
-import static com.peartree.android.kiteplayer.utils.SongCacheHelper.SMALL_ALBUM_ART_DIMENSIONS;
 
 /**
  * An implementation of Playback that talks to Cast.
@@ -113,7 +108,7 @@ public class CastPlayback implements Playback {
     private volatile int mCurrentPosition;
     private volatile String mCurrentMediaId;
 
-    private CachedDataServer mHttpServer;
+    private final CachedDataServer mHttpServer;
 
     public CastPlayback(MusicProvider musicProvider, Context ctx) {
         this.mMusicProvider = musicProvider;
@@ -374,7 +369,7 @@ public class CastPlayback implements Playback {
         if (httpServer.isAlive()) {
             WebImage image = new WebImage(
                     new Uri.Builder().encodedPath(
-                            httpServer.getBaseUrl() + httpServer.ALBUM_ART_PATH +
+                            httpServer.getBaseUrl() + CachedDataServer.ALBUM_ART_PATH +
                                     "/" + cachedImageKey.toString())
                             .build());
             // First image is used by the receiver for showing the audio album art.
@@ -387,12 +382,12 @@ public class CastPlayback implements Playback {
         String source = track.getString(MusicProvider.CUSTOM_METADATA_TRACK_SOURCE);
 
         try {
-            URL remoteSource = new URL(source);
+            @SuppressWarnings("UnusedAssignment") URL remoteSource = new URL(source);
         } catch (MalformedURLException e) {
             if (!httpServer.isAlive()) {
                 LogHelper.e(TAG, "toCastMediaMetadata - Local server appears to be dead.");
             }
-            source = httpServer.getBaseUrl() + httpServer.SONG_FILE_PATH + source;
+            source = httpServer.getBaseUrl() + CachedDataServer.SONG_FILE_PATH + source;
 
         }
 
@@ -578,7 +573,7 @@ public class CastPlayback implements Playback {
 
             WifiManager wifiManager =
                     (WifiManager) mApplicationContext.getSystemService(
-                            mApplicationContext.WIFI_SERVICE);
+                            Context.WIFI_SERVICE);
 
             int ipAddress = wifiManager.getConnectionInfo().getIpAddress();
 

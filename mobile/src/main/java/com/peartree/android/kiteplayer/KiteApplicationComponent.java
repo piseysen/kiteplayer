@@ -13,7 +13,6 @@ import android.support.annotation.Nullable;
 
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
-import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
 import com.peartree.android.kiteplayer.model.AlbumArtLoader;
 import com.peartree.android.kiteplayer.ui.ActionBarCastActivity;
 import com.peartree.android.kiteplayer.ui.AuthActivity;

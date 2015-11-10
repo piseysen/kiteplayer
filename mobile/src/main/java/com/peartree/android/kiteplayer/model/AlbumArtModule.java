@@ -18,7 +18,6 @@ import com.bumptech.glide.module.GlideModule;
 import com.peartree.android.kiteplayer.utils.LogHelper;
 import com.peartree.android.kiteplayer.utils.PrefUtils;
 
-import java.io.File;
 import java.io.InputStream;
 
 public class AlbumArtModule implements GlideModule {

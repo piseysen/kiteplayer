@@ -44,7 +44,6 @@ public class AuthActivity extends AppCompatActivity {
     MusicProvider mMusicProvider;
 
     private View mAuthMessage;
-    private Button mAuthButton;
     private ProgressBar mAuthProgress;
 
     @Override
@@ -62,7 +61,7 @@ public class AuthActivity extends AppCompatActivity {
         setContentView(R.layout.activity_auth);
         mAuthMessage = findViewById(R.id.auth_message_layout);
 
-        mAuthButton = (Button)findViewById(R.id.auth_button);
+        Button mAuthButton = (Button) findViewById(R.id.auth_button);
         mAuthButton.setOnClickListener(v -> {
             mAuthMessage.setVisibility(View.GONE);
             mAuthProgress.setVisibility(View.VISIBLE);

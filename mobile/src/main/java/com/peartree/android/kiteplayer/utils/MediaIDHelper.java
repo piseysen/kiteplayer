@@ -28,8 +28,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
-import java.util.Arrays;
-
 /**
  * Utility class to help on generating and parsing MediaIDs.
  * MediaIDs are of the form <categoryType>~<categoryValue>|<musicUniqueId>, to make it easy
@@ -53,9 +51,7 @@ public class MediaIDHelper {
         String categoryHierarchy = TextUtils.join(CATEGORY_SEPARATOR,categories);
 
         if (musicID != null) {
-            StringBuilder sb = new StringBuilder(categoryHierarchy);
-            sb.append(LEAF_SEPARATOR).append(musicID);
-            return sb.toString();
+            return categoryHierarchy + LEAF_SEPARATOR + musicID;
         } else {
             return categoryHierarchy;
         }
@@ -93,7 +89,7 @@ public class MediaIDHelper {
     }
 
     private static boolean isCategory(String mediaID) {
-        return mediaID.indexOf(LEAF_SEPARATOR) < 0;
+        return !mediaID.contains(LEAF_SEPARATOR);
     }
 
     @Nullable

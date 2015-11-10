@@ -148,9 +148,8 @@ public class DropboxDBSong {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof DropboxDBSong)) return false;
+        return o instanceof DropboxDBSong && areEqual(this, (DropboxDBSong) o);
 
-        return areEqual(this,(DropboxDBSong)o);
     }
 
     private static boolean areEqual(DropboxDBSong _this, DropboxDBSong _that) {
@@ -170,9 +169,8 @@ public class DropboxDBSong {
         if (_this.getTrackNumber() != _that.getTrackNumber()) return false;
         if (_this.getTotalTracks() != _that.getTotalTracks()) return false;
 
-        if (_this.getEntryId() != _that.getEntryId()) return false;
+        return _this.getEntryId() == _that.getEntryId();
 
-        return true;
     }
 
     @Override

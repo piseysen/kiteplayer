@@ -55,14 +55,14 @@ public class DropboxSyncService {
 
     private static final String TAG = LogHelper.makeLogTag(DropboxSyncService.class);
 
-    private Context mApplicationContext;
+    private final Context mApplicationContext;
 
-    private DropboxAPI<AndroidAuthSession> mDropboxApi;
+    private final DropboxAPI<AndroidAuthSession> mDropboxApi;
 
-    private DropboxDBEntryDAO mEntryDao;
-    private DropboxDBSongDAO mSongDao;
+    private final DropboxDBEntryDAO mEntryDao;
+    private final DropboxDBSongDAO mSongDao;
     @Nullable
-    private ImmutableFileLRUCache mCachedSongs;
+    private final ImmutableFileLRUCache mCachedSongs;
 
     private Subscription mQueueSubscription;
 
@@ -429,7 +429,7 @@ public class DropboxSyncService {
 
                 retriever.setDataSource(
                         song.getDownloadURL().toString(),
-                        new HashMap<String, String>());
+                        new HashMap<>());
             } else {
                 return null;
             }

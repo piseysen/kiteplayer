@@ -9,9 +9,9 @@
 package com.peartree.android.kiteplayer.database;
 
 
+import android.annotation.SuppressLint;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.support.annotation.NonNull;
 
 import com.peartree.android.kiteplayer.database.DropboxDBContract.Entry;
 import com.peartree.android.kiteplayer.database.DropboxDBEntryMapper.DropboxDBEntryCursorWrapper;
@@ -27,7 +27,7 @@ public class DropboxDBEntryDAO {
 
     private static final String TAG = LogHelper.makeLogTag(DropboxDBEntryDAO.class);
 
-    private DropboxDBHelper mDbHelper;
+    private final DropboxDBHelper mDbHelper;
 
     @Inject
     public DropboxDBEntryDAO(DropboxDBHelper dbHelper) {
@@ -49,6 +49,7 @@ public class DropboxDBEntryDAO {
         return id;
     }
 
+    @SuppressLint("Recycle")
     public DropboxDBEntry findById(long id) {
 
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
@@ -75,6 +76,7 @@ public class DropboxDBEntryDAO {
 
     }
 
+    @SuppressLint("Recycle")
     public Observable<DropboxDBEntry> findByParentDir(String parentDir, boolean excludeEmpty) {
 
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
@@ -113,7 +115,7 @@ public class DropboxDBEntryDAO {
 
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
-        Cursor results = db.query(
+        @SuppressLint("Recycle") Cursor results = db.query(
                 Entry.TABLE_NAME,
                 null, null, null, null, null,
                 "RANDOM()",
@@ -135,7 +137,7 @@ public class DropboxDBEntryDAO {
                 "NOT "+Entry.COLUMN_NAME_IS_DIR;
         String[] selectionArgs = new String[] {query};
 
-        Cursor results = db.rawQuery(
+        @SuppressLint("Recycle") Cursor results = db.rawQuery(
                 "SELECT e.* " +
                         "FROM " + Entry.TABLE_NAME + " AS e " +
                         "INNER JOIN " + Entry.FTS4_TABLE_NAME + " AS ei " +

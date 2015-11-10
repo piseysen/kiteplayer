@@ -106,18 +106,15 @@ public class PlaybackControlsFragment extends Fragment {
         mSubtitle = (TextView) rootView.findViewById(R.id.artist);
         mExtraInfo = (TextView) rootView.findViewById(R.id.extra_info);
         mAlbumArt = (ImageView) rootView.findViewById(R.id.album_art);
-        rootView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(getActivity(), FullScreenPlayerActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                MediaMetadata metadata = getActivity().getMediaController().getMetadata();
-                if (metadata != null) {
-                    intent.putExtra(MusicPlayerActivity.EXTRA_CURRENT_MEDIA_DESCRIPTION,
-                            metadata.getDescription());
-                }
-                startActivity(intent);
+        rootView.setOnClickListener(v -> {
+            Intent intent = new Intent(getActivity(), FullScreenPlayerActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            MediaMetadata metadata = getActivity().getMediaController().getMetadata();
+            if (metadata != null) {
+                intent.putExtra(MusicPlayerActivity.EXTRA_CURRENT_MEDIA_DESCRIPTION,
+                        metadata.getDescription());
             }
+            startActivity(intent);
         });
         return rootView;
     }
@@ -230,27 +227,24 @@ public class PlaybackControlsFragment extends Fragment {
         setExtraInfo(extraInfo);
     }
 
-    private final View.OnClickListener mButtonListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            PlaybackState stateObj = getActivity().getMediaController().getPlaybackState();
-            final int state = stateObj == null ?
-                    PlaybackState.STATE_NONE : stateObj.getState();
-            LogHelper.d(TAG, "Button pressed, in state ", state);
-            switch (v.getId()) {
-                case R.id.play_pause:
-                    LogHelper.d(TAG, "Play button pressed, in state ", state);
-                    if (state == PlaybackState.STATE_PAUSED ||
-                            state == PlaybackState.STATE_STOPPED ||
-                            state == PlaybackState.STATE_NONE) {
-                        playMedia();
-                    } else if (state == PlaybackState.STATE_PLAYING ||
-                            state == PlaybackState.STATE_BUFFERING ||
-                            state == PlaybackState.STATE_CONNECTING) {
-                        pauseMedia();
-                    }
-                    break;
-            }
+    private final View.OnClickListener mButtonListener = v -> {
+        PlaybackState stateObj = getActivity().getMediaController().getPlaybackState();
+        final int state = stateObj == null ?
+                PlaybackState.STATE_NONE : stateObj.getState();
+        LogHelper.d(TAG, "Button pressed, in state ", state);
+        switch (v.getId()) {
+            case R.id.play_pause:
+                LogHelper.d(TAG, "Play button pressed, in state ", state);
+                if (state == PlaybackState.STATE_PAUSED ||
+                        state == PlaybackState.STATE_STOPPED ||
+                        state == PlaybackState.STATE_NONE) {
+                    playMedia();
+                } else if (state == PlaybackState.STATE_PLAYING ||
+                        state == PlaybackState.STATE_BUFFERING ||
+                        state == PlaybackState.STATE_CONNECTING) {
+                    pauseMedia();
+                }
+                break;
         }
     };
 

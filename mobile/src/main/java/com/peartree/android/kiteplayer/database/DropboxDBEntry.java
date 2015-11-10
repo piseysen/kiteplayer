@@ -170,9 +170,7 @@ public class DropboxDBEntry {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof DropboxDBEntry)) return false;
-
-        return areEqual(this, (DropboxDBEntry) o);
+        return o instanceof DropboxDBEntry && areEqual(this, (DropboxDBEntry) o);
 
     }
 

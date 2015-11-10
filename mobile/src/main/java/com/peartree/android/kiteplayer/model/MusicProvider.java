@@ -34,7 +34,6 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
-import com.peartree.android.kiteplayer.R;
 import com.peartree.android.kiteplayer.VoiceSearchParams;
 import com.peartree.android.kiteplayer.database.DropboxDBEntry;
 import com.peartree.android.kiteplayer.database.DropboxDBEntryDAO;
@@ -46,7 +45,6 @@ import com.peartree.android.kiteplayer.utils.MediaIDHelper;
 import com.peartree.android.kiteplayer.utils.NetworkHelper;
 
 import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -74,23 +72,20 @@ public class MusicProvider {
 
     private final Context mApplicationContext;
 
-    private DropboxAPI<AndroidAuthSession> mDBApi = null;
-    private DropboxDBEntryDAO mEntryDao;
-    private DropboxDBSongDAO mSongDao;
-    private DropboxSyncService mDBSyncService;
+    private final DropboxDBEntryDAO mEntryDao;
+    private final DropboxDBSongDAO mSongDao;
+    private final DropboxSyncService mDBSyncService;
 
     private volatile State mCurrentState = State.NON_INITIALIZED;
 
     @Inject
     public MusicProvider(Application application,
-                         DropboxAPI<AndroidAuthSession> dbApi,
                          DropboxDBEntryDAO entryDao,
                          DropboxDBSongDAO songDao,
                          DropboxSyncService syncService) {
 
         this.mApplicationContext = application.getApplicationContext();
 
-        this.mDBApi = dbApi;
         this.mEntryDao = entryDao;
         this.mSongDao = songDao;
         this.mDBSyncService = syncService;
@@ -108,7 +103,7 @@ public class MusicProvider {
         Observable<Long> existingEntries =
                 mEntryDao
                         .findByParentDir("/")
-                        .map(entry -> entry.getId());
+                        .map(DropboxDBEntry::getId);
 
         Observable<Long> newEntries =
                 mDBSyncService
@@ -262,7 +257,7 @@ public class MusicProvider {
         entryQueryResults =
                 mEntryDao
                         .queryByFilenameKeyword(params.query)
-                        .map(entry -> completeWithSong(entry))
+                        .map(this::completeWithSong)
                         .flatMap(this::toMediaMetadata);
 
         return songQueryResults
@@ -298,7 +293,7 @@ public class MusicProvider {
 
     @NonNull
     private Observable<DropboxDBEntry> completeWithSong(Observable<DropboxDBEntry> entries) {
-        return entries.map(entry -> completeWithSong(entry));
+        return entries.map(this::completeWithSong);
     }
 
     private DropboxDBEntry completeWithSong(DropboxDBEntry entry) {
@@ -362,7 +357,7 @@ public class MusicProvider {
                 Bitmap icon = Glide
                         .with(ctx.getApplicationContext())
                         .load("android.resource://" + ctx.getPackageName() +
-                                "/drawable/ic_folder_grey_36dp")
+                                "/drawable/ic_folder_grey_52dp")
                         .asBitmap()
                         .diskCacheStrategy(DiskCacheStrategy.ALL)
                         .into(SMALL_ALBUM_ART_DIMENSIONS[0], SMALL_ALBUM_ART_DIMENSIONS[1])

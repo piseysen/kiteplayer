@@ -113,7 +113,7 @@ public class MusicPlayerActivity extends BaseActivity
         setContentView(R.layout.activity_player);
         mCoordinatorLayout = (CoordinatorLayout) findViewById(R.id.coordinatorlayout);
 
-        initializeFromParams(savedInstanceState, getIntent());
+        initializeFromParams(savedInstanceState);
         initializeToolbar();
 
         // Only check if a full screen player is needed on the first time:
@@ -285,7 +285,7 @@ public class MusicPlayerActivity extends BaseActivity
         }
     }
 
-    protected void initializeFromParams(Bundle savedInstanceState, Intent intent) {
+    protected void initializeFromParams(Bundle savedInstanceState) {
 
         // Will synthesize a new backstack for the browse fragment if starting fresh
         // Essentially starting up the app at the last visited media ID

@@ -14,7 +14,7 @@ public class CloseableHelper {
 
     private static final String TAG = LogHelper.makeLogTag(CloseableHelper.class);
 
-    public static final void closeQuietly(Closeable c) {
+    public static void closeQuietly(Closeable c) {
         if (c != null) {
             try {
                 c.close();
