@@ -1,9 +1,18 @@
+/*
+ * Copyright (c) 2015 Rafael Pereira
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at
+ *     https://mozilla.org/MPL/2.0/.
+ */
+
 package com.peartree.android.kiteplayer.dropbox;
 
 import android.app.Application;
 import android.content.Context;
 import android.media.MediaMetadata;
 import android.media.MediaMetadataRetriever;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.bumptech.glide.Glide;
@@ -52,12 +61,13 @@ public class DropboxSyncService {
 
     private DropboxDBEntryDAO mEntryDao;
     private DropboxDBSongDAO mSongDao;
+    @Nullable
     private ImmutableFileLRUCache mCachedSongs;
 
     private Subscription mQueueSubscription;
 
     @Inject
-    public DropboxSyncService(Application application,
+    public DropboxSyncService(@NonNull Application application,
                               DropboxAPI<AndroidAuthSession> dbApi,
                               DropboxDBEntryDAO entryDao,
                               DropboxDBSongDAO songDao,
@@ -71,6 +81,7 @@ public class DropboxSyncService {
 
     }
 
+    @NonNull
     public Observable<Long> synchronizeEntryDB() {
 
         return Observable.create(subscriber -> {
@@ -159,7 +170,8 @@ public class DropboxSyncService {
         );
     }
 
-    public Observable<DropboxDBEntry> prepareSongForPlayback(Observable<DropboxDBEntry> entries) {
+    @NonNull
+    public Observable<DropboxDBEntry> prepareSongForPlayback(@NonNull Observable<DropboxDBEntry> entries) {
 
         return entries.map(entry -> {
 
@@ -185,7 +197,8 @@ public class DropboxSyncService {
 
     }
 
-    public Observable<DropboxDBEntry> fillSongMetadata(Observable<DropboxDBEntry> entries) {
+    @NonNull
+    public Observable<DropboxDBEntry> fillSongMetadata(@NonNull Observable<DropboxDBEntry> entries) {
 
         return entries.map(entry -> {
 
@@ -273,7 +286,7 @@ public class DropboxSyncService {
                         song.setHasValidAlbumArt(false);
                     }
 
-                } catch (InterruptedException | ExecutionException e) {
+                } catch (@NonNull InterruptedException | ExecutionException e) {
                     song.setHasValidAlbumArt(false);
                     LogHelper.w(TAG, e,
                             "synchronizeSongDB - Failed to cache album art image for path=",
@@ -281,8 +294,6 @@ public class DropboxSyncService {
                 }
             }
 
-
-            // TODO Decide where to update DB
             long id = mSongDao.insertOrReplace(song);
             LogHelper.d(TAG,
                     "synchronizeSongDB - Updated song for path=", entry.getFullPath(),
@@ -292,7 +303,7 @@ public class DropboxSyncService {
         });
     }
 
-    public void downloadSongQueue(Observable<DropboxDBEntry> queue) {
+    public void downloadSongQueue(@NonNull Observable<DropboxDBEntry> queue) {
 
         if (mQueueSubscription != null && !mQueueSubscription.isUnsubscribed()) {
             mQueueSubscription.unsubscribe();
@@ -311,7 +322,7 @@ public class DropboxSyncService {
                 }, error -> LogHelper.w(TAG,error,"downloadSongQueue - Failed"));
     }
 
-    private boolean refreshDownloadURL(DropboxDBEntry entry) {
+    private boolean refreshDownloadURL(@NonNull DropboxDBEntry entry) {
 
         DropboxDBSong song = entry.getOrCreateSong();
         DropboxAPI.DropboxLink link;
@@ -336,7 +347,7 @@ public class DropboxSyncService {
                 song.setDownloadURL(new URL(link.url));
                 song.setDownloadURLExpiration(link.expires);
 
-            } catch (MalformedURLException | DropboxException e) {
+            } catch (@NonNull MalformedURLException | DropboxException e) {
 
                 if (e instanceof DropboxException) {
                     DropboxHelper.unlinkSessionIfUnlinkedException(mDropboxApi.getSession(),
@@ -360,7 +371,7 @@ public class DropboxSyncService {
 
     private
     @Nullable
-    File downloadSongDataIntoCache(DropboxDBEntry entry) {
+    File downloadSongDataIntoCache(@NonNull DropboxDBEntry entry) {
 
         LogHelper.d(TAG,
                 "downloadSongDataIntoCache - Starting download for path=", entry.getFullPath());
@@ -393,7 +404,7 @@ public class DropboxSyncService {
 
     private
     @Nullable
-    MediaMetadataRetriever initializeMediaMetadataRetriever(DropboxDBEntry entry, @Nullable File cachedSongFile) {
+    MediaMetadataRetriever initializeMediaMetadataRetriever(@NonNull DropboxDBEntry entry, @Nullable File cachedSongFile) {
 
         DropboxDBSong song = entry.getSong();
 
@@ -436,7 +447,8 @@ public class DropboxSyncService {
         return retriever;
     }
 
-    public Observable<byte[]> getAlbumArt(MediaMetadata mm) {
+    @NonNull
+    public Observable<byte[]> getAlbumArt(@NonNull MediaMetadata mm) {
 
         return Observable.create(subscriber -> {
 

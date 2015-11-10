@@ -257,7 +257,6 @@ public class TvBrowseFragment extends BrowseFragment {
             @Override
             public void onClick(View view) {
                 LogHelper.d(TAG, "In-app search");
-                // TODO Implement in-app search
                 Intent intent = new Intent(getActivity(), TvBrowseActivity.class);
                 startActivity(intent);
             }

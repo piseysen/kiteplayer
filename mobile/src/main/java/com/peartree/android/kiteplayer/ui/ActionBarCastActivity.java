@@ -53,6 +53,7 @@ import com.peartree.android.kiteplayer.utils.ResourceHelper;
 import javax.inject.Inject;
 
 import rx.android.schedulers.AndroidSchedulers;
+import rx.exceptions.OnErrorThrowable;
 import rx.schedulers.Schedulers;
 import rx.util.async.Async;
 
@@ -305,7 +306,7 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
                             return mDBApi.accountInfo();
                         } catch (DropboxException e) {
                             DropboxHelper.unlinkSessionIfUnlinkedException(mDBApi.getSession(), e);
-                            throw new RuntimeException(e);
+                            throw OnErrorThrowable.from(e);
                         }
                     })
                     .subscribeOn(Schedulers.io())

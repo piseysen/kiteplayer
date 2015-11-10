@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Original work Copyright (C) 2014 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified work Copyright (c) 2015 Rafael Pereira
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at
+ *
+ *      https://mozilla.org/MPL/2.0/
+ *
  */
 package com.peartree.android.kiteplayer;
 
@@ -64,6 +72,7 @@ import java.util.concurrent.TimeUnit;
 
 import fi.iki.elonen.NanoHTTPD;
 import rx.Observable;
+import rx.exceptions.OnErrorThrowable;
 import rx.schedulers.Schedulers;
 
 import static android.media.session.MediaSession.QueueItem;
@@ -308,7 +317,7 @@ public class CastPlayback implements Playback {
                         try {
                             mHttpServer.start();
                         } catch (IOException e) {
-                            throw new RuntimeException(e);
+                            throw OnErrorThrowable.from(e);
                         }
                     }
 
@@ -323,13 +332,13 @@ public class CastPlayback implements Playback {
                     try {
                         customData.put(ITEM_ID, mediaId);
                     } catch (JSONException e) {
-                        throw new RuntimeException(e); // TODO Better way to deal with exceptions
+                        throw OnErrorThrowable.from(e);
                     }
                     MediaInfo media = toCastMediaMetadata(track, customData, mHttpServer);
                     try {
                         mCastManager.loadMedia(media, autoPlay, mCurrentPosition, customData);
                     } catch (Exception e) {
-                        throw new RuntimeException(e); // TODO Better way to deal with exceptions
+                        throw OnErrorThrowable.from(e);
                     }
 
                     return media;

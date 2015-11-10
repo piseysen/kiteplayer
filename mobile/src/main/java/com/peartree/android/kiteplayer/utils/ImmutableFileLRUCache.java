@@ -1,5 +1,16 @@
+/*
+ * Copyright (c) 2015 Rafael Pereira
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at
+ *
+ *      https://mozilla.org/MPL/2.0/
+ *
+ */
+
 package com.peartree.android.kiteplayer.utils;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.io.File;
@@ -19,11 +30,12 @@ public class ImmutableFileLRUCache {
 
     public static final String TAG = LogHelper.makeLogTag(ImmutableFileLRUCache.class);
 
+    @Nullable
     private String mParentDirPath = null;
     private long mSizeLimitInBytes = 0;
     private Map<String, Lock> mWriters;
 
-    public ImmutableFileLRUCache(String parentDirPath, long sizeLimitInBytes) {
+    public ImmutableFileLRUCache(@NonNull String parentDirPath, long sizeLimitInBytes) {
 
         if (!validParentDir(parentDirPath)) {
             throw new ImmutableFileLRUCacheException("Parent directory does not exist, cannot be created or is not writeable.");
@@ -38,7 +50,7 @@ public class ImmutableFileLRUCache {
         this.mSizeLimitInBytes = newSize;
     }
 
-    private boolean validParentDir(String parentDirPath) {
+    private boolean validParentDir(@NonNull String parentDirPath) {
         File parentDir = new File(parentDirPath);
 
         if (!parentDir.exists()) {
@@ -50,10 +62,9 @@ public class ImmutableFileLRUCache {
 
     public
     @Nullable
-    File newFile(String filename, ImmutableFileWriter writer) {
+    File newFile(String filename, @NonNull ImmutableFileWriter writer) {
 
         // Filename must be defined
-        // TODO Fix callers which pass null names in
         if (filename == null || filename.trim().equals("")) return null;
 
         Lock writerLock;
@@ -157,7 +168,6 @@ public class ImmutableFileLRUCache {
     File get(String filename, long timeout) {
 
         // Filename must be defined
-        // TODO Fix callers which pass null names in
         if (filename == null || filename.trim().equals("")) return null;
 
         File existingFile = new File(mParentDirPath, filename);

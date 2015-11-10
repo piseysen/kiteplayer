@@ -281,8 +281,6 @@ public class TvPlaybackFragment extends android.support.v17.leanback.app.Playbac
         mRowsAdapter.notifyArrayItemRangeChanged(
                 mRowsAdapter.indexOf(mPlaybackControlsRow), 1);
 
-        // TODO Test
-
         Glide
                 .with(this)
                 .load(metadata)

@@ -13,8 +13,6 @@ android {
         versionCode 1
         versionName "1.0"
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-
         buildConfigField 'String', 'dbApiKey', '"mz1r7oeb58b1h82"'
         buildConfigField 'String', 'dbApiSecret', '"w30zzoa3iihfja5"'
     }
@@ -44,7 +42,7 @@ repositories {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile fileTree(include: ['*.jar'], dir: 'libs')
     compile 'com.google.android.gms:play-services-cast:7.5.0'
     compile 'com.google.android.support:wearable:+'
     compile 'com.android.support:support-v4:23.0.0'
@@ -53,40 +51,23 @@ dependencies {
     compile 'com.android.support:design:23.0.0'
     compile 'com.android.support:mediarouter-v7:23.0.0'
     compile 'com.android.support:leanback-v17:23.0.0'
-
-    compile (name:'CastCompanionLibrary-debug', ext:'aar')
+    compile(name: 'CastCompanionLibrary-debug', ext: 'aar')
     compile 'com.github.amlcurran.showcaseview:library:5.0.0'
-
     // NanoHTTPD
     compile 'com.nanohttpd:nanohttpd:2.1.1'
-
     // Glide
     compile 'com.github.bumptech.glide:glide:3.6.+'
     compile 'com.github.bumptech.glide:okhttp-integration:1.3.+'
-
     // RxJava / RxAndroid
     compile 'io.reactivex:rxjava:1.0.+'
     compile 'io.reactivex:rxjava-async-util:0.21.+'
     compile 'io.reactivex:rxandroid:0.25.+'
-
     // Dagger 2
     compile 'com.google.dagger:dagger:2.+'
     apt 'com.google.dagger:dagger-compiler:2.+'
-    testCompile 'com.google.dagger:dagger:2.+'
-    testCompile 'com.google.dagger:dagger-compiler:2.+'
-
     // Java APIs
     compile 'javax.annotation:javax.annotation-api:1.2'
-
     // Stetho
     compile 'com.facebook.stetho:stetho:1.2.0'
-
-    // Robolectric
-    testCompile 'junit:junit:4.+'
-    testCompile 'org.hamcrest:hamcrest-library:1.3' // TODO review dependency
-    testCompile 'org.robolectric:robolectric:3.+'
-    testCompile 'org.apache.httpcomponents:httpclient:4.5'
-
-    // Mockito
-    testCompile "org.mockito:mockito-core:1.+"
+    compile 'com.android.support:support-annotations:23.1.0'
 }

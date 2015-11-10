@@ -75,7 +75,6 @@ public class CardPresenter extends Presenter {
         cardViewHolder.mCardView.setContentText(description.getSubtitle());
         cardViewHolder.mCardView.setMainImageDimensions(CARD_WIDTH, CARD_HEIGHT);
 
-        // TODO Test and determine need for fetching image if not in description
         setCardImage(cardViewHolder, description.getIconBitmap());
 
     }

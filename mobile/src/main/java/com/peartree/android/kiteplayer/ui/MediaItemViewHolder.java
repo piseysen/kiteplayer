@@ -1,17 +1,25 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Original work Copyright (C) 2014 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified work Copyright (c) 2015 Rafael Pereira
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at
+ *
+ *      https://mozilla.org/MPL/2.0/
+ *
  */
 package com.peartree.android.kiteplayer.ui;
 
@@ -20,6 +28,7 @@ import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.drawable.AnimationDrawable;
 import android.media.MediaDescription;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -48,12 +57,11 @@ public class MediaItemViewHolder {
     static View setupView(Activity activity, View convertView, ViewGroup parent,
                                     MediaDescription description, int state) {
 
-        if (sColorStateNotPlaying == null || sColorStatePlaying == null) {
+        if (sColorStatePlaying == null || sColorStateNotPlaying == null) {
             initializeColorStateLists(activity);
         }
 
         MediaItemViewHolder holder;
-
         Integer cachedState = STATE_INVALID;
 
         if (convertView == null) {
@@ -122,7 +130,6 @@ public class MediaItemViewHolder {
         return convertView;
     }
 
-    // TODO Eliminate duplicate method
     static private void initializeColorStateLists(Context ctx) {
         sColorStateNotPlaying = ColorStateList.valueOf(ResourceHelper.getThemeColor(ctx, android.R.attr.textColorSecondary, R.color.secondary_text_light));
         sColorStatePlaying = ColorStateList.valueOf(ResourceHelper.getThemeColor(ctx, R.attr.colorAccent, R.color.app_accent));

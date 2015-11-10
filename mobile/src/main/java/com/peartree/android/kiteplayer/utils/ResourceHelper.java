@@ -19,8 +19,10 @@ package com.peartree.android.kiteplayer.utils;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
+import android.support.v4.content.ContextCompat;
 
 /**
  * Generic reusable methods to handle resources.
@@ -50,4 +52,5 @@ public class ResourceHelper {
         }
         return themeColor;
     }
+
 }

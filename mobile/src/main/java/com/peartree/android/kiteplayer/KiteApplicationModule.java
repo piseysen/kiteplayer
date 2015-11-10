@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 2015 Rafael Pereira
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at
+ *
+ *      https://mozilla.org/MPL/2.0/
+ *
+ */
+
 package com.peartree.android.kiteplayer;
 
 import android.app.Application;
@@ -58,20 +68,30 @@ public class KiteApplicationModule {
     @Nullable
     ImmutableFileLRUCache provideCachedSongs() {
 
-        File diskLRUCacheDir =
-                new File(mApplicationContext.getExternalCacheDir().getPath() +
-                        File.separator + "lrucache");
+        File diskLRUCacheDir = mApplicationContext.getExternalCacheDir();
+        if (diskLRUCacheDir == null) {
+            diskLRUCacheDir = mApplicationContext.getCacheDir();
+        }
+
+        diskLRUCacheDir = new File(diskLRUCacheDir.getPath() + File.separator + "lrucache");
 
         if (!diskLRUCacheDir.exists())
             diskLRUCacheDir.mkdir();
 
-        int cacheSize = Integer.parseInt(PrefUtils.getCacheSize(mApplicationContext));
+        // Allocates 90% of user defined cache size to songs
+        int songCacheSizeInMBs =
+                Math.round(Integer.parseInt(PrefUtils.getCacheSize(mApplicationContext)) * 0.9f);
 
         final ImmutableFileLRUCache cache =
-                new ImmutableFileLRUCache(diskLRUCacheDir.getPath(), cacheSize * 1024 * 1024);
+                new ImmutableFileLRUCache(diskLRUCacheDir.getPath(), songCacheSizeInMBs * 1024 * 1024);
 
         PrefUtils.registerOnCacheSizeChangeListener(mApplicationContext,
-                newValue -> cache.setSizeLimitInBytes(Integer.parseInt(newValue) * 1024 * 1024));
+                newValue -> {
+                    // Allocates 90% of user defined cache size to songs
+                    int newSongCacheSizeInMBs =
+                            Math.round(Integer.parseInt(newValue) * 0.9f);
+                    cache.setSizeLimitInBytes(newSongCacheSizeInMBs * 1024 * 1024);
+                });
 
         try {
             return cache;

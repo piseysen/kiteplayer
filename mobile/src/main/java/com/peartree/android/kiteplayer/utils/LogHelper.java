@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Original work Copyright (C) 2014 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified work Copyright (c) 2015 Rafael Pereira
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at
+ *
+ *      https://mozilla.org/MPL/2.0/
+ *
  */
 package com.peartree.android.kiteplayer.utils;
 
@@ -42,17 +50,11 @@ public class LogHelper {
 
 
     public static void v(String tag, Object... messages) {
-        // Only log VERBOSE if build type is DEBUG
-        if (BuildConfig.DEBUG) {
-            log(tag, Log.VERBOSE, null, messages);
-        }
+        log(tag, Log.VERBOSE, null, messages);
     }
 
     public static void d(String tag, Object... messages) {
-        // Only log DEBUG if build type is DEBUG
-        if (BuildConfig.DEBUG) {
-            log(tag, Log.DEBUG, null, messages);
-        }
+        log(tag, Log.DEBUG, null, messages);
     }
 
     public static void i(String tag, Object... messages) {
@@ -76,7 +78,7 @@ public class LogHelper {
     }
 
     public static void log(String tag, int level, Throwable t, Object... messages) {
-//        if (Log.isLoggable(tag, level)) { // TODO Uncomment
+        if (BuildConfig.DEBUG || Log.isLoggable(tag, level)) {
             String message;
             if (t == null && messages != null && messages.length == 1) {
                 // handle this common case without the extra cost of creating a stringbuffer:
@@ -93,5 +95,5 @@ public class LogHelper {
             }
             Log.println(level, tag, message);
         }
-//    }
+    }
 }

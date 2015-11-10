@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Original work Copyright (C) 2014 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Modified work Copyright (c) 2015 Rafael Pereira
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at
+ *
+ *      https://mozilla.org/MPL/2.0/
+ *
  */
 
 package com.peartree.android.kiteplayer.utils;
@@ -27,6 +35,7 @@ import com.peartree.android.kiteplayer.VoiceSearchParams;
 import com.peartree.android.kiteplayer.model.MusicProvider;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -63,8 +72,7 @@ public class QueueHelper {
             mmObservable = musicProvider.searchMusicByVoiceParams(
                     new VoiceSearchParams(categories[0],new Bundle()));
         } else if (categoryType.equals(MEDIA_ID_ROOT)) {
-            // TODO Move folder formatting to utils class
-            String folder = "/"+ TextUtils.join("/",categories);
+            String folder = DropboxHelper.makeDropboxPath(null,categories);
             mmObservable = musicProvider
                     .getMusicByFolder(folder);
         } else {
@@ -136,13 +144,9 @@ public class QueueHelper {
 
     private static QueueItem convertToQueueItem(MediaMetadata track, int index, String categoryType, String[] categories) {
 
-        // TODO Figure out more elegant way to combine arrays
         String[] combined = new String[categories.length+1];
-
         combined[0] = categoryType;
-        for (int i = 0; i < categories.length; i++) {
-            combined[i+1] = categories[i];
-        }
+        System.arraycopy(categories, 0, combined, 1, categories.length);
 
         return convertToQueueItem(track, index, combined);
     }
@@ -174,24 +178,11 @@ public class QueueHelper {
      * @return list containing {@link MediaSession.QueueItem}'s
      */
     public static Observable<QueueItem> getRandomQueue(MusicProvider musicProvider, Context ctx) {
-        List<MediaMetadata> result = new ArrayList<>();
+        Observable<MediaMetadata> mmObservable =
+                musicProvider.getMusicAtRandom(30);
 
-        // TODO Implement getRandomQueue
 
-//        for (String genre: musicProvider.getGenres()) {
-//            Iterable<MediaMetadata> tracks = musicProvider.getMusicsByGenre(genre);
-//            for (MediaMetadata track: tracks) {
-//                if (ThreadLocalRandom.current().nextBoolean()) {
-//                    result.add(track);
-//                }
-//            }
-//        }
-        LogHelper.d(TAG, "getRandomQueue: result.size=", result.size());
-
-        Collections.shuffle(result);
-
-        return Observable
-                .from(result)
+        return mmObservable
                 .filter(mm -> MusicProvider.willBePlayable(ctx,mm))
                 .zipWith(mIndexSequence, (mm, index) ->
                         convertToQueueItem(

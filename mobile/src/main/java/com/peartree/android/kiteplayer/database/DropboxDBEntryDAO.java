@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2015 Rafael Pereira
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at
+ *     https://mozilla.org/MPL/2.0/.
+ */
+
 package com.peartree.android.kiteplayer.database;
 
 
@@ -101,6 +109,22 @@ public class DropboxDBEntryDAO {
         return new DropboxDBEntryCursorWrapper(results).getObservable();
     }
 
+    public Observable<DropboxDBEntry> findRandom(int count) {
+
+        SQLiteDatabase db = mDbHelper.getReadableDatabase();
+
+        Cursor results = db.query(
+                Entry.TABLE_NAME,
+                null, null, null, null, null,
+                "RANDOM()",
+                String.valueOf(count));
+
+        LogHelper.d(TAG,
+                "Found ", results.getCount(), " entries for random count=", count);
+
+        return new DropboxDBEntryCursorWrapper(results).getObservable();
+    }
+
     public Observable<DropboxDBEntry> queryByFilenameKeyword(String query) {
 
         LogHelper.d(TAG,"queryByFilenameKeyword - Query with: ",query);
@@ -113,10 +137,10 @@ public class DropboxDBEntryDAO {
 
         Cursor results = db.rawQuery(
                 "SELECT e.* " +
-                        "FROM "+Entry.TABLE_NAME+" AS e " +
-                        "INNER JOIN "+Entry.FTS4_TABLE_NAME+" AS ei " +
+                        "FROM " + Entry.TABLE_NAME + " AS e " +
+                        "INNER JOIN " + Entry.FTS4_TABLE_NAME + " AS ei " +
                         "ON e.rowid = ei.docid " +
-                        "WHERE "+selection,
+                        "WHERE " + selection,
                 selectionArgs);
 
         LogHelper.d(TAG,
@@ -188,4 +212,6 @@ public class DropboxDBEntryDAO {
 
         return deleted;
     }
+
+
 }
