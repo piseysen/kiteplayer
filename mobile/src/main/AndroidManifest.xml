@@ -16,7 +16,7 @@
   -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.peartree.android.kiteplayer">
+    package="com.misterpereira.android.kiteplayer">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -40,7 +40,7 @@
         -->
 
     <application
-        android:name=".KiteApplication"
+        android:name="com.misterpereira.android.kiteplayer.KiteApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -56,7 +56,7 @@
             android:value="@integer/google_play_services_version" />
 
         <!-- Intro activity for the unauthenticated user -->
-        <activity android:name="com.peartree.android.kiteplayer.ui.AuthActivity"
+        <activity android:name="com.misterpereira.android.kiteplayer.ui.AuthActivity"
             android:label="@string/app_name">
 
             <intent-filter>
@@ -68,7 +68,7 @@
 
         <!-- Main activity for music browsing on phone -->
         <activity
-            android:name="com.peartree.android.kiteplayer.ui.MusicPlayerActivity"
+            android:name="com.misterpereira.android.kiteplayer.ui.MusicPlayerActivity"
             android:label="@string/app_name">
 
             <!-- Use this intent filter to get voice searches, like "Play The Beatles" -->
@@ -80,27 +80,27 @@
 
         <!-- Settings activity for phone UI -->
         <activity
-            android:name="com.peartree.android.kiteplayer.ui.SettingsActivity"
+            android:name="com.misterpereira.android.kiteplayer.ui.SettingsActivity"
             android:label="@string/app_name">
         </activity>
 
         <!-- Proxy activity that opens either the NowPlaying TV or the mobile UI, depending on
         the current environment -->
         <activity
-            android:name="com.peartree.android.kiteplayer.ui.NowPlayingActivity"
+            android:name="com.misterpereira.android.kiteplayer.ui.NowPlayingActivity"
             android:icon="@mipmap/ic_launcher">
         </activity>
 
         <!-- A full screen activity showing controls and a seek bar for
              the current playing music -->
         <activity
-            android:name="com.peartree.android.kiteplayer.ui.FullScreenPlayerActivity"
+            android:name="com.misterpereira.android.kiteplayer.ui.FullScreenPlayerActivity"
             android:label="@string/app_name"
             android:launchMode="singleTop"
-            android:parentActivityName="com.peartree.android.kiteplayer.ui.MusicPlayerActivity">
+            android:parentActivityName="com.misterpereira.android.kiteplayer.ui.MusicPlayerActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.peartree.android.kiteplayer.ui.MusicPlayerActivity"/>
+                android:value="com.misterpereira.android.kiteplayer.ui.MusicPlayerActivity"/>
         </activity>
 
         <!--
@@ -111,7 +111,7 @@
         Main activity for Android TV user interface
 
         <activity
-            android:name="com.peartree.android.kiteplayer.ui.tv.TvBrowseActivity"
+            android:name="misterpereirareira.android.kiteplayer.ui.tv.TvBrowseActivity"
             android:label="@string/app_name"
             android:theme="@style/Theme.KiteTV" >
             <intent-filter>
@@ -121,14 +121,14 @@
         </activity>
 
         <activity
-            android:name="com.peartree.android.kiteplayer.ui.tv.TvVerticalGridActivity"
+            android:name="misterpereirareira.android.kiteplayer.ui.tv.TvVerticalGridActivity"
             android:theme="@style/Theme.KiteTV"
-            android:parentActivityName="com.peartree.android.kiteplayer.ui.tv.TvBrowseActivity" />
+            android:parentActivityName="misterpereirareira.android.kiteplayer.ui.tv.TvBrowseActivity" />
 
         <activity
-            android:name="com.peartree.android.kiteplayer.ui.tv.TvPlaybackActivity"
+            android:name="misterpereirareira.android.kiteplayer.ui.tv.TvPlaybackActivity"
             android:theme="@style/Theme.KiteTV"
-            android:parentActivityName="com.peartree.android.kiteplayer.ui.tv.TvBrowseActivity" />
+            android:parentActivityName="misterpereirareira.android.kiteplayer.ui.tv.TvBrowseActivity" />
             -->
 
         <!--
@@ -163,7 +163,7 @@
          consumers through MediaBrowserService and MediaSession. Consumers connect to it through
          MediaBrowser (for browsing) and MediaController (for play session control) -->
         <service
-            android:name="com.peartree.android.kiteplayer.MusicService"
+            android:name="com.misterpereira.android.kiteplayer.MusicService"
             android:exported="true"
             tools:ignore="ExportedService">
             <intent-filter>
@@ -192,7 +192,7 @@
 
         <!-- Glide Module -->
         <meta-data
-            android:name="com.peartree.android.kiteplayer.model.AlbumArtModule"
+            android:name="com.misterpereira.android.kiteplayer.model.AlbumArtModule"
             android:value="GlideModule" />
 
     </application>

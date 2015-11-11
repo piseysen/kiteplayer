@@ -52,9 +52,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 custom:cardElevation="8dp"
-                custom:layout_behavior="com.peartree.android.kiteplayer.ui.PlaybackControlsFragment$Behavior">
+                custom:layout_behavior="com.misterpereira.android.kiteplayer.ui.PlaybackControlsFragment$Behavior">
 
-                <fragment android:name="com.peartree.android.kiteplayer.ui.PlaybackControlsFragment"
+                <fragment android:name="com.misterpereira.android.kiteplayer.ui.PlaybackControlsFragment"
                     android:id="@+id/fragment_playback_controls"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
