@@ -43,6 +43,8 @@ import android.support.annotation.NonNull;
 import android.support.v7.media.MediaRouter;
 import android.text.TextUtils;
 
+import com.google.android.gms.analytics.HitBuilders;
+import com.google.android.gms.analytics.Tracker;
 import com.google.android.gms.cast.ApplicationMetadata;
 import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
 import com.google.android.libraries.cast.companionlibrary.cast.callbacks.VideoCastConsumerImpl;
@@ -165,6 +167,9 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
     @Inject
     MusicProvider mMusicProvider;
 
+    @Inject
+    Tracker mGATracker;
+
     private VideoCastManager mCastManager;
     private Subscription mQueueSubscription;
 
@@ -187,6 +192,11 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
             Playback playback = new CastPlayback(mMusicProvider,getApplicationContext());
             mMediaRouter.setMediaSession(mSession);
             switchToPlayer(playback, true);
+            mGATracker.send(
+                    new HitBuilders.EventBuilder()
+                            .setCategory("GoogleCast")
+                            .setAction("Connect")
+                            .build());
         }
 
         @Override
@@ -197,6 +207,11 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
             Playback playback = new LocalPlayback(MusicService.this, mMusicProvider);
             mMediaRouter.setMediaSession(null);
             switchToPlayer(playback, false);
+            mGATracker.send(
+                    new HitBuilders.EventBuilder()
+                            .setCategory("GoogleCast")
+                            .setAction("Disconnect")
+                            .build());
         }
     };
 
@@ -251,6 +266,13 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
             public void onReceive(Context context, Intent intent) {
                 String connectionEvent = intent.getStringExtra(CarHelper.MEDIA_CONNECTION_STATUS);
                 mIsConnectedToCar = CarHelper.MEDIA_CONNECTED.equals(connectionEvent);
+
+                mGATracker.send(
+                        new HitBuilders.EventBuilder()
+                                .setCategory("AndroidAuto")
+                                .setAction(mIsConnectedToCar ? "Connect" : "Disconnect")
+                                .build());
+
                 LogHelper.i(TAG, "Connection event to Android Auto: ", connectionEvent,
                         " isConnectedToCar=", mIsConnectedToCar);
             }
@@ -327,6 +349,13 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
             // If you want to adapt other runtime behaviors, like tweak ads or change some behavior
             // that should be different on cars, you should instead use the boolean flag
             // set by the BroadcastReceiver mCarConnectionReceiver (mIsConnectedToCar).
+
+            mGATracker.send(
+                    new HitBuilders.EventBuilder()
+                            .setCategory("AndroidAuto")
+                            .setAction("Browse")
+                            .build()
+            );
         }
 
         //noinspection StatementWithEmptyBody
@@ -334,6 +363,13 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
             // Optional: if your app needs to adapt the music library for when browsing from a
             // Wear device, you should return a different MEDIA ROOT here, and then,
             // on onLoadChildren, handle it accordingly.
+
+            mGATracker.send(
+                    new HitBuilders.EventBuilder()
+                            .setCategory("AndroidWear")
+                            .setAction("Browse")
+                            .build()
+            );
         }
 
         return new BrowserRoot(MediaIDHelper.MEDIA_ID_ROOT, null);
@@ -454,6 +490,12 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                 mMusicProvider.preloadPlaylist(mPlayingQueue);
             }
 
+            mGATracker.send(
+                    new HitBuilders.EventBuilder()
+                            .setCategory("PlayerCommand")
+                            .setAction("Play")
+                            .build()
+            );
         }
 
         @Override
@@ -466,12 +508,26 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                 // play the music
                 handlePlayRequest();
             }
+
+            mGATracker.send(
+                    new HitBuilders.EventBuilder()
+                            .setCategory("PlayerCommand")
+                            .setAction("SkipToItem")
+                            .build()
+            );
         }
 
         @Override
         public void onSeekTo(long position) {
             LogHelper.d(TAG, "onSeekTo:", position);
             mPlayback.seekTo((int) position);
+
+            mGATracker.send(
+                    new HitBuilders.EventBuilder()
+                            .setCategory("PlayerCommand")
+                            .setAction("Seek")
+                            .build()
+            );
         }
 
         @Override
@@ -528,18 +584,38 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                     }, error -> {
                         LogHelper.e(TAG,error,"onPlayFromMediaId - Unable to create queue");
                     });
+
+            mGATracker.send(
+                    new HitBuilders.EventBuilder()
+                            .setCategory("PlayerCommand")
+                            .setAction("PlayFromID")
+                            .build()
+            );
         }
 
         @Override
         public void onPause() {
             LogHelper.d(TAG, "pause. current state=", mPlayback.getState());
             handlePauseRequest();
+
+            mGATracker.send(
+                    new HitBuilders.EventBuilder()
+                            .setCategory("PlayerCommand")
+                            .setAction("Pause")
+                            .build()
+            );
         }
 
         @Override
         public void onStop() {
             LogHelper.d(TAG, "stop. current state=", mPlayback.getState());
             handleStopRequest(null);
+            mGATracker.send(
+                    new HitBuilders.EventBuilder()
+                            .setCategory("PlayerCommand")
+                            .setAction("Stop")
+                            .build()
+            );
         }
 
         @Override
@@ -559,6 +635,12 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                         (mPlayingQueue == null ? "null" : mPlayingQueue.size()));
                 handleStopRequest("Cannot skip");
             }
+            mGATracker.send(
+                    new HitBuilders.EventBuilder()
+                            .setCategory("PlayerCommand")
+                            .setAction("SkipToNext")
+                            .build()
+            );
         }
 
         @Override
@@ -578,6 +660,13 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                         (mPlayingQueue == null ? "null" : mPlayingQueue.size()));
                 handleStopRequest("Cannot skip");
             }
+
+            mGATracker.send(
+                    new HitBuilders.EventBuilder()
+                            .setCategory("PlayerCommand")
+                            .setAction("SkipToPrevious")
+                            .build()
+            );
         }
 
         @Override
@@ -622,6 +711,13 @@ public class MusicService extends MediaBrowserService implements Playback.Callba
                                                 LogHelper.e(TAG,error,"onPlayFromSearch - Unable to create queue from search.");
                                             }))
                     .subscribe();
+
+            mGATracker.send(
+                    new HitBuilders.EventBuilder()
+                            .setCategory("PlayerCommand")
+                            .setAction("PlayFromSearch")
+                            .build()
+            );
         }
     }
 

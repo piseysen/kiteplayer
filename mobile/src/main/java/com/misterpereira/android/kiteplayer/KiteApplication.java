@@ -11,9 +11,12 @@ package com.misterpereira.android.kiteplayer;
 import android.app.Application;
 
 import com.facebook.stetho.Stetho;
+import com.google.android.gms.analytics.Tracker;
 import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
 import com.misterpereira.android.kiteplayer.ui.FullScreenPlayerActivity;
 import com.misterpereira.android.kiteplayer.utils.LogHelper;
+
+import javax.inject.Inject;
 
 import static com.google.android.libraries.cast.companionlibrary.cast.BaseCastManager.FEATURE_DEBUGGING;
 import static com.google.android.libraries.cast.companionlibrary.cast.BaseCastManager.FEATURE_WIFI_RECONNECT;

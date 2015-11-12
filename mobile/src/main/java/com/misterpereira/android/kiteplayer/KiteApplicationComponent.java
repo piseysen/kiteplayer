@@ -13,6 +13,7 @@ import android.support.annotation.Nullable;
 
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
+import com.google.android.gms.analytics.Tracker;
 import com.misterpereira.android.kiteplayer.model.AlbumArtLoader;
 import com.misterpereira.android.kiteplayer.ui.ActionBarCastActivity;
 import com.misterpereira.android.kiteplayer.ui.AuthActivity;
@@ -40,4 +41,6 @@ public interface KiteApplicationComponent {
 
     @Nullable
     ImmutableFileLRUCache cachedSongs();
+
+    Tracker gaTracker();
 }

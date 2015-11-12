@@ -17,6 +17,8 @@ import android.support.annotation.Nullable;
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.session.AppKeyPair;
+import com.google.android.gms.analytics.GoogleAnalytics;
+import com.google.android.gms.analytics.Tracker;
 import com.misterpereira.android.kiteplayer.utils.ImmutableFileLRUCache;
 import com.misterpereira.android.kiteplayer.utils.PrefUtils;
 import com.squareup.okhttp.OkHttpClient;
@@ -33,10 +35,16 @@ public class KiteApplicationModule {
 
     private final KiteApplication mApplication;
     private final Context mApplicationContext;
+    private final Tracker mGATracker;
 
     public KiteApplicationModule(KiteApplication application) {
         mApplication = application;
         mApplicationContext = application.getApplicationContext();
+
+        // Eagerly initializes GA tracker
+        GoogleAnalytics analytics = GoogleAnalytics.getInstance(mApplicationContext);
+        // To enable debug logging use: adb shell setprop log.tag.GAv4 DEBUG
+        mGATracker = analytics.newTracker(R.xml.ga_tracker);
     }
 
     @Provides @Singleton
@@ -96,8 +104,8 @@ public class KiteApplicationModule {
     }
 
     @Provides @Singleton
-    OkHttpClient provideHttpClient() {
-        return new OkHttpClient();
+    Tracker provideGATracker() {
+        return mGATracker;
     }
 
 }

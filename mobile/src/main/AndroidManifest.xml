@@ -175,6 +175,15 @@
         <service
             android:name="com.google.android.libraries.cast.companionlibrary.cast.reconnection.ReconnectionService"/>
 
+        <!-- Used for Google Play Store Campaign Measurement-->
+        <service android:name="com.google.android.gms.analytics.CampaignTrackingService" />
+        <receiver android:name="com.google.android.gms.analytics.CampaignTrackingReceiver"
+            android:exported="true"
+            android:permission="android.permission.INSTALL_PACKAGES">
+            <intent-filter>
+                <action android:name="com.android.vending.INSTALL_REFERRER" />
+            </intent-filter>
+        </receiver>
 
         <!-- Dropbox login activity -->
         <activity

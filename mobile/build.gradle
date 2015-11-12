@@ -1,6 +1,7 @@
 apply plugin: 'com.android.application'
 apply plugin: 'com.neenbedankt.android-apt'
 apply plugin: 'me.tatarka.retrolambda'
+apply plugin: 'com.google.gms.google-services'
 
 android {
     compileSdkVersion 23
@@ -53,6 +54,10 @@ dependencies {
     compile 'com.android.support:leanback-v17:23.1.0'
     compile(name: 'CastCompanionLibrary-debug', ext: 'aar')
     compile 'com.github.amlcurran.showcaseview:library:5.0.0'
+
+    // Google Analytics
+    compile 'com.google.android.gms:play-services-analytics:8.3.0'
+
     // NanoHTTPD
     compile 'com.nanohttpd:nanohttpd:2.1.1'
     // Glide
