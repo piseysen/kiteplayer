@@ -4,24 +4,38 @@ apply plugin: 'me.tatarka.retrolambda'
 apply plugin: 'com.google.gms.google-services'
 
 android {
+    signingConfigs {
+        if (project.hasProperty('storeFile')) {
+            release {
+                storeFile file(project.storeFile)
+                storePassword project.storePassword
+                keyAlias project.keyAlias
+                keyPassword project.keyPassword
+            }
+        } else {
+            release.initWith(debug)
+        }
+    }
     compileSdkVersion 23
     buildToolsVersion "23.0.1"
-
     defaultConfig {
         applicationId "com.misterpereira.android.kiteplayer"
         minSdkVersion 21
         targetSdkVersion 22
         versionCode 1
-        versionName "1.0"
+        versionName '1.0.0'
 
         buildConfigField 'String', 'dbApiKey', '"mz1r7oeb58b1h82"'
-        buildConfigField 'String', 'dbApiSecret', '"w30zzoa3iihfja5"'
+        buildConfigField 'String', 'dbApiSecret',
+                project.hasProperty('dbApiSecret')?"\"${project.dbApiSecret}\"":'""'
     }
     buildTypes {
         release {
-            // TODO Enable minify and resource shrinking
-            minifyEnabled true
+            minifyEnabled false // TODO Fix proguard
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', 'proguard-retrolambda.pro', 'proguard-rxjava.pro', 'proguard-glide.pro'
+            signingConfig signingConfigs.release
+            zipAlignEnabled true
         }
     }
     compileOptions {
@@ -33,6 +47,8 @@ android {
     }
     packagingOptions {
         exclude 'META-INF/LICENSE.txt'
+    }
+    productFlavors {
     }
 }
 
@@ -54,10 +70,8 @@ dependencies {
     compile 'com.android.support:leanback-v17:23.1.0'
     compile(name: 'CastCompanionLibrary-debug', ext: 'aar')
     compile 'com.github.amlcurran.showcaseview:library:5.0.0'
-
     // Google Analytics
     compile 'com.google.android.gms:play-services-analytics:8.3.0'
-
     // NanoHTTPD
     compile 'com.nanohttpd:nanohttpd:2.1.1'
     // Glide
