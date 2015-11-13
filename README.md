@@ -24,15 +24,11 @@ Known Issues
 Screenshots
 -----------
 
-![Dropbox Authentication](screenshots/phone_auth.png "Dropbox Authentication")
-![Phone](screenshots/phone.png "On a phone")
+![Lock screen](screenshots/phone_lockscreen.png "Lockscreen background and controls")
 ![Playing](screenshots/phone_playing.png "Playing")
 ![Full screen player](screenshots/phone_fullscreen_player.png "Full screen")
-![Navigation](screenshots/phone_drawer.png "Navigation")
-![Lock screen](screenshots/phone_lockscreen.png "Lockscreen background and controls")
 ![Android Wear watch face](screenshots/android_wear_1.png "Notifications on an Android Wear watch")
 ![Android Wear notification](screenshots/android_wear_2.png "Expanded notification on an Android Wear watch")
-![Android Wear browse](screenshots/android_wear_3.png "Browse control on an Android Wear watch")
 ![Android Auto](screenshots/android_auto.png "Running on an Android Auto car")
 
 License
