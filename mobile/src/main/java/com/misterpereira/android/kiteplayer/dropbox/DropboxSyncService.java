@@ -37,8 +37,10 @@ import com.misterpereira.android.kiteplayer.utils.SongCacheHelper;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
@@ -54,6 +56,9 @@ import static com.misterpereira.android.kiteplayer.utils.SongCacheHelper.LARGE_A
 public class DropboxSyncService {
 
     private static final String TAG = LogHelper.makeLogTag(DropboxSyncService.class);
+    private static final List<String> SUPPORTED_EXTENSIONS =
+            Arrays.asList(new String[]{".3gp", ".mp4", ".m4a", ".acc", ".ts", ".flac", ".mp3", ".mid", ".xmf",
+                    ".mxmf", ".rtttl", ".rtx", ".ota", ".imy", ".ogg", ".mkv", ".wav"});
 
     private final Context mApplicationContext;
 
@@ -113,10 +118,17 @@ public class DropboxSyncService {
 
                                 dbEntry = deltaEntry.metadata;
 
+                                int extStartIndex = -1;
                                 if (dbEntry == null || dbEntry.isDeleted) {
                                     mEntryDao.deleteTreeByAncestorDir(deltaEntry.lcPath);
                                     LogHelper.d(TAG,
                                             "synchronizeEntryDB - Deleted entry path=", deltaEntry.lcPath);
+
+                                    continue;
+                                } else if (!dbEntry.isDir &&
+                                        (extStartIndex = dbEntry.fileName().lastIndexOf('.')) != -1 &&
+                                        !SUPPORTED_EXTENSIONS.contains(
+                                                dbEntry.fileName().substring(extStartIndex))) {
 
                                     continue;
                                 }

@@ -22,10 +22,10 @@ android {
         applicationId "com.misterpereira.android.kiteplayer"
         minSdkVersion 21
         targetSdkVersion 22
-        versionCode 1
-        versionName '1.0.0'
+        versionCode 2
+        versionName '1.0.1'
 
-        buildConfigField 'String', 'dbApiKey', '"mz1r7oeb58b1h82"'
+        buildConfigField 'String', 'dbApiKey', '"a7hfbbfwl9n54k7"'
         buildConfigField 'String', 'dbApiSecret',
                 project.hasProperty('dbApiSecret')?"\"${project.dbApiSecret}\"":'""'
     }
