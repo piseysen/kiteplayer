@@ -21,7 +21,8 @@
     android:minHeight="@dimen/drawer_item_height"
     android:paddingEnd="@dimen/drawer_item_horizontal_padding"
     android:paddingStart="@dimen/drawer_item_horizontal_padding"
-    android:orientation="horizontal">
+    android:orientation="horizontal"
+    android:background="@drawable/drawer_list_colors">
 
     <ImageView
         android:id="@+id/drawer_item_icon"
@@ -30,14 +31,15 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="@dimen/drawer_item_icon_margin_end"
         android:tintMode="src_in"
-        android:tint="@color/drawer_item_tint_color"
+        android:tint="@color/drawer_list_icon_colors"
         android:layout_gravity="center_vertical"
         tools:ignore="ContentDescription" />
 
     <TextView
         android:id="@+id/drawer_item_title"
         tools:text="Music library"
-        android:textColor="@color/drawer_item_tint_color"
+        android:textAppearance="?attr/textAppearanceBody2"
+        android:textColor="@color/drawer_list_icon_colors"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"/>

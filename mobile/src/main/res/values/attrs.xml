@@ -15,7 +15,23 @@
   limitations under the License.
   -->
 <resources>
+
     <declare-styleable name="ScrimInsetsView">
-        <attr name="insetForeground" format="reference|color" />
+        <attr name="legacyInsetForeground" format="reference|color" />
     </declare-styleable>
+
+    <!-- Material Text Appearance:
+        http://www.google.com/design/spec/style/typography.html#typography-styles -->
+    <attr name="textAppearanceDisplay4" format="reference" />
+    <attr name="textAppearanceDisplay3" format="reference" />
+    <attr name="textAppearanceDisplay2" format="reference" />
+    <attr name="textAppearanceDisplay1" format="reference" />
+    <attr name="textAppearanceHeadline" format="reference" />
+    <attr name="textAppearanceTitle" format="reference" />
+    <attr name="textAppearanceSubhead" format="reference" />
+    <attr name="textAppearanceBody2" format="reference" />
+    <attr name="textAppearanceBody1" format="reference" />
+    <attr name="textAppearanceCaption" format="reference" />
+    <attr name="textAppearanceButton" format="reference" />
+
 </resources>

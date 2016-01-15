@@ -27,9 +27,8 @@
         android:layout_centerVertical="true"
         android:layout_marginStart="@dimen/media_item_icon_margin_start"
         android:tintMode="src_in"
-        android:tint="@color/media_item_icon_not_playing"
         android:contentDescription="@string/play_item"
-        android:src="@drawable/ic_play_arrow_black_36dp"/>
+        android:src="@drawable/ic_play_arrow_black_36dp" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -46,8 +45,8 @@
             android:layout_height="wrap_content"
             android:maxLines="1"
             android:ellipsize="end"
-            android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="?android:attr/textColorPrimary"/>
+            android:textAppearance="?attr/textAppearanceSubhead"
+            android:textColor="?android:attr/textColorPrimary" />
 
         <TextView
             android:id="@+id/description"
@@ -56,7 +55,7 @@
             android:layout_height="wrap_content"
             android:maxLines="1"
             android:ellipsize="end"
-            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:textAppearance="?attr/textAppearanceBody1"
             android:textColor="?android:attr/textColorSecondary"/>
 
     </LinearLayout>

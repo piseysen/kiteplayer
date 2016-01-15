@@ -1,51 +1,40 @@
-Universal Android Music Player Sample
-=====================================
+Kite Player
+===========
 
-This sample shows how to implement an audio media app that works
-across multiple form factors and provide a consistent user experience
-on Android phones, tablets, Android Auto, Android Wear, Android TV and Google Cast devices.
+This is a simplistic Android media player for songs stored on Dropbox.
+It's also a universal player, with support for Google Cast, Android Wear and Android Auto.
+It's built on top of [Universal Music Player](https://github.com/googlesamples/android-UniversalMusicPlayer).
 
+Besides integrating Dropbox, several other aspects have been enhanced/improved:
+- New theme and branding
+- Better use of Material Design guidelines
+- Persistent song library
+- Proper image handling/caching
+- User settings
+- Conservative use of storage and bandwidth
+- Better error handling
+- Introduction of Dagger 2 and RxJava
 
-Pre-requisites
---------------
+Known Issues
+------------
 
-- Android SDK v21
-
-Getting Started
----------------
-
-This sample uses the Gradle build system. To build this project, use the
-"gradlew build" command or use "Import Project" in Android Studio.
+- **Android TV support**: Has been disabled due to lack of out-of-the box support for Dropbox authentication
+- **Android Auto navigation**: By design and due to safety reasons, Android Auto limits any form of user interaction to 5 taps. If the user has a long or deep folder hierarchy the app should be smart to present the data differently so all if it is accessible to the user.
 
 Screenshots
 -----------
 
-![Phone](screenshots/phone.png "On a phone")
 ![Lock screen](screenshots/phone_lockscreen.png "Lockscreen background and controls")
-![Full screen player](screenshots/phone_fullscreen_player.png "A basic full screen activity")
-![Cast dialog](screenshots/phone_cast_dialog.png "Casting to Google Cast devices")
+![Playing](screenshots/phone_playing.png "Playing")
+![Full screen player](screenshots/phone_fullscreen_player.png "Full screen")
+![Android Wear watch face](screenshots/android_wear_1.png "Notifications on an Android Wear watch")
+![Android Wear notification](screenshots/android_wear_2.png "Expanded notification on an Android Wear watch")
 ![Android Auto](screenshots/android_auto.png "Running on an Android Auto car")
-![Android TV](screenshots/android_tv.png "Running on an Android TV")
-
-![Android Wear watch face](screenshots/android_wear_1.png "MediaStyle notifications on an Android Wear watch")
-![Android Wear controls](screenshots/android_wear_2.png "Media playback controls on an Android Wear watch")
-
-Support
--------
-
-- Google+ Community: https://plus.google.com/communities/105153134372062985968
-- Stack Overflow: http://stackoverflow.com/questions/tagged/android
-
-If you've found an error in this sample, please file an issue:
-https://github.com/googlesamples/android-UniversalMusicPlayer/issues
-
-Patches are encouraged, and may be submitted by forking this project and
-submitting a pull request through GitHub. Please see CONTRIBUTING.md for more details.
 
 License
 -------
 
-Copyright 2014 The Android Open Source Project, Inc.
+Original work Copyright 2014 The Android Open Source Project, Inc.
 
 Licensed to the Apache Software Foundation (ASF) under one or more contributor
 license agreements.  See the NOTICE file distributed with this work for
@@ -61,3 +50,10 @@ distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
 License for the specific language governing permissions and limitations under
 the License.
+
+Modified work Copyright (c) 2015 Rafael Pereira
+
+This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+If a copy of the MPL was not distributed with this file, You can obtain one at
+
+  https://mozilla.org/MPL/2.0/

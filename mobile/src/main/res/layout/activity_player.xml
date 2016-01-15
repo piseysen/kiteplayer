@@ -29,29 +29,42 @@
         android:layout_height="match_parent">
 
         <include android:id="@+id/toolbar"
-                 layout="@layout/include_toolbar"/>
+            layout="@layout/include_toolbar"/>
 
         <FrameLayout
             android:id="@+id/container"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_below="@+id/toolbar"
-            android:layout_above="@+id/controls_container"/>
+            android:layout_above="@+id/coordinatorlayout">
 
-        <android.support.v7.widget.CardView
-            android:id="@+id/controls_container"
+        </FrameLayout>
+
+        <android.support.design.widget.CoordinatorLayout
+            android:id="@+id/coordinatorlayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            custom:cardElevation="8dp">
+            android:layout_alignParentBottom="true">
 
-            <fragment android:name="com.example.android.uamp.ui.PlaybackControlsFragment"
-                      android:id="@+id/fragment_playback_controls"
-                      android:layout_width="match_parent"
-                      android:layout_height="wrap_content"
-                      android:layout_alignParentBottom="true"/>
+            <android.support.v7.widget.CardView
+                android:id="@+id/controls_container"
+                style="@style/CardView.Light"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                custom:cardElevation="8dp"
+                custom:layout_behavior="com.misterpereira.android.kiteplayer.ui.PlaybackControlsFragment$Behavior">
 
-        </android.support.v7.widget.CardView>
+                <fragment android:name="com.misterpereira.android.kiteplayer.ui.PlaybackControlsFragment"
+                    android:id="@+id/fragment_playback_controls"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentBottom="true"
+                    tools:layout="@layout/fragment_playback_controls" />
+
+            </android.support.v7.widget.CardView>
+
+        </android.support.design.widget.CoordinatorLayout>
+
 
     </RelativeLayout>
 

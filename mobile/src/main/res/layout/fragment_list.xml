@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
   Copyright (C) 2014 The Android Open Source Project
 
   Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,37 +13,57 @@
   See the License for the specific language governing permissions and
   limitations under the License.
   -->
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:tools="http://schemas.android.com/tools"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent">
 
-    <android.support.v7.widget.CardView
-        android:id="@+id/playback_error"
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/swipe_refresh_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ListView
+            android:id="@+id/list_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_alignParentBottom="true">
+
+        </ListView>
+    </android.support.v4.widget.SwipeRefreshLayout>
+    <LinearLayout
+        android:id="@+id/nosong_message_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:animateLayoutChanges="true"
+        android:layout_gravity="center_vertical"
+        android:gravity="center"
+        android:orientation="vertical"
         android:visibility="gone">
+
         <TextView
-            android:id="@+id/error_message"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingRight="@dimen/error_horizontal_padding"
-            android:paddingLeft="@dimen/error_horizontal_padding"
-            android:paddingTop="@dimen/error_vertical_padding"
-            android:paddingBottom="@dimen/error_vertical_padding"
-            android:background="@color/error_message_background"
             android:gravity="center"
-            tools:text="Connectivity error!"
-            android:textColor="@android:color/white"
-            android:textStyle="bold"/>
-    </android.support.v7.widget.CardView>
-    <ListView
-        android:id="@+id/list_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_alignParentBottom="true"
-        android:layout_below="@id/playback_error">
-    </ListView>
-</RelativeLayout>
+            android:text="@string/nosongs_title"
+            android:textAppearance="?attr/textAppearanceHeadline"
+            android:textColor="?android:attr/textColorPrimary" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/nosong_instructions"
+            android:textAppearance="?attr/textAppearanceBody1"
+            android:textColor="?android:attr/textColorSecondary" />
+
+        <Button
+            android:id="@+id/nosong_refresh_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="24dp"
+            android:text="@string/nosong_refresh" />
+
+    </LinearLayout>
+</FrameLayout>
